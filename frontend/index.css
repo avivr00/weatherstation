@@ -17,7 +17,7 @@ body {
     align-items: center;
 }
 
-/* */
+/* פריסה של שלוש השורות */
 .full-width {
     width: 98vw;
     max-width: 1600px;
@@ -261,7 +261,7 @@ body {
     color: #e67a13;
 }
 
-/* 10 Day Forecast Table Styling */
+/* 10 Day Forecast Table Styling (לא חובה לשנות) */
 .ten-day-table {
     width: 100%;
     font-size: 1.13em;
