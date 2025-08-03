@@ -76,6 +76,6 @@ function renderWeatherTable(data) {
 
 // When the page loads, fetch the weather data from backend API
 document.addEventListener("DOMContentLoaded", () => {
-  fetchWeatherData();
+  renderWeatherTable(weather_data); // Render example data initially
 });
 
