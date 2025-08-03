@@ -108,23 +108,6 @@ function renderTenDayForecast(days) {
 
 // Render everything on page load & set weekly forecast arrows
 document.addEventListener("DOMContentLoaded", () => {
-  renderHourlyWidget(weatherData.hours);
-  renderWeeklyForecast(weeklyData, firstDayIndex);
-  renderTenDayForecast(tenDayForecast);
-
-  // Optional: Set UV & Sunset values dynamically
-  document.getElementById("uvNum").textContent = 4;
-  document.getElementById("uvText").textContent = "Moderate";
-  document.getElementById("uvColor").style.width = "40%";
-  document.getElementById("sunsetTime").textContent = "7:35 PM";
-
-  // Weekly forecast navigation
-  document.getElementById("prevDayBtn").onclick = () => {
-      firstDayIndex = (firstDayIndex - 1 + 7) % 7;
-      renderWeeklyForecast(weeklyData, firstDayIndex);
-  };
-  document.getElementById("nextDayBtn").onclick = () => {
-      firstDayIndex = (firstDayIndex + 1) % 7;
-      renderWeeklyForecast(weeklyData, firstDayIndex);
-  };
+  fetchWeatherData();
 });
+
