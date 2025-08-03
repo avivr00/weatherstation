@@ -79,7 +79,3 @@ document.addEventListener("DOMContentLoaded", () => {
   fetchWeatherData();
 });
 
-// Load table when page is loaded
-document.addEventListener("DOMContentLoaded", () => {
-  renderWeatherTable(weather_data);
-});
