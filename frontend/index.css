@@ -197,15 +197,14 @@ body {
 /* Bottom row: 10 Day + UV/Sunset */
 .main-bottom-row {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 48px; /* space between 10 day and UV/Sunset */
+    grid-template-columns: 1fr 360px; /* adjust 360px as needed */
+    gap: 48px;
     width: 98vw;
     max-width: 1600px;
     margin: 30px auto 32px auto;
     min-height: 540px;
     align-items: stretch;
 }
-
 .ten-day-col {
     display: flex;
     flex-direction: column;
@@ -244,24 +243,35 @@ body {
 
 .ten-day-row {
     display: grid;
-    grid-template-columns: 68px 42px 48px 100px 48px; /* label | icon | min | bar | max */
+    grid-template-columns: 62px 170px 150px 50px 80px 55px;
     align-items: center;
     border-bottom: 1.5px solid #e3e8ef;
-    padding: 8px 0;
+    padding: 7px 0;
     width: 100%;
     box-sizing: border-box;
-    column-gap: 18px;  /* NEW: gap between columns */
+    column-gap: 24px;
 }
 
 .day-label {
     font-weight: 700;
     color: #1976d2;
     text-align: left;
+    margin-right: 4px;
+}
+
+.day-date {
+    font-size: 0.97em;
+    color: #1976d2;
+    font-weight: 500;
+    min-width: 120px;  /* שינוי פה! */
+    text-align: center;
+    letter-spacing: 1px;
 }
 
 .day-icon {
     font-size: 1.3em;
     justify-self: center;
+    /* הסר margin-left כאן */
 }
 
 .day-min, .day-max {
@@ -269,22 +279,23 @@ body {
     text-align: center;
     font-weight: 700;
     margin: 0;
-    padding: 0 4px; /* NEW: more space left/right */
+    padding: 0 4px;
 }
 
 .day-min { color: #47c9e5; }
 .day-max { color: #ff9f43; }
 
 .day-range {
-    width: 85px;   /* Wider bar */
+    width: 72px;
     height: 13px;
     background: #e8f0fb;
     border-radius: 8px;
-    margin: 0 6px;  /* More space around bar */
+    margin: 0 6px;
     display: inline-block;
     position: relative;
-    min-width: 65px;
+    min-width: 58px;
 }
+
 
 
 .day-range-bar {

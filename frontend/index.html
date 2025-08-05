@@ -8,7 +8,6 @@
 <body>
     <div class="container-bg">
 
-        <!-- Main Title -->
         <div class="main-title">Weather Data for Tel-Hai</div>
 
         <!-- Hourly Forecast Card -->
@@ -17,7 +16,7 @@
             <div class="hourly-scroll" id="hourlyWidgetScroll"></div>
         </div>
 
-        <!-- Weekly Forecast Card (14-day scrollable) -->
+        <!-- Weekly Forecast Card -->
         <div class="weather-card full-width weekly-forecast-card">
             <div class="card-title">
                 <button id="prevDayBtn" class="circle-btn">&lt;</button>
@@ -27,14 +26,14 @@
             <div class="weekly-scroll" id="weeklyForecast"></div>
         </div>
 
-        <!-- Main bottom row: 10 Day Forecast (synced) + UV & Sunset -->
+        <!-- Two columns: 10 Day Forecast | UV + Sunset -->
         <div class="main-bottom-row">
             <!-- Left: 10 Day Forecast -->
             <div class="ten-day-col weather-card ten-day-forecast-card">
                 <div class="card-title">10 Day Forecast</div>
                 <div id="tenDayForecast"></div>
             </div>
-            <!-- Right: UV Index + Sunset -->
+            <!-- Right: UV Index + Sunset (stacked, equal height) -->
             <div class="uv-sunset-col">
                 <div class="weather-card uv-sunset uv-sunset-half">
                     <div class="card-title">Today's UV Index</div>
