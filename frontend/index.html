@@ -8,13 +8,16 @@
 <body>
     <div class="container-bg">
 
-        <!-- Hourly Forecast Card (row 1) -->
+        <!-- Main Title -->
+        <div class="main-title">Weather Data for Tel-Hai</div>
+
+        <!-- Hourly Forecast Card -->
         <div class="weather-card full-width">
             <div class="card-title">Hourly Forecast</div>
             <div class="hourly-scroll" id="hourlyWidgetScroll"></div>
         </div>
 
-        <!-- Weekly Forecast Card (row 2) -->
+        <!-- Weekly Forecast Card (14-day scrollable) -->
         <div class="weather-card full-width weekly-forecast-card">
             <div class="card-title">
                 <button id="prevDayBtn" class="circle-btn">&lt;</button>
@@ -24,17 +27,17 @@
             <div class="weekly-scroll" id="weeklyForecast"></div>
         </div>
 
-        <!-- Row 3: grid, two columns -->
+        <!-- Main bottom row: 10 Day Forecast (synced) + UV & Sunset -->
         <div class="main-bottom-row">
             <!-- Left: 10 Day Forecast -->
             <div class="ten-day-col weather-card ten-day-forecast-card">
                 <div class="card-title">10 Day Forecast</div>
                 <div id="tenDayForecast"></div>
             </div>
-            <!-- Right: UV Index + Sunset (stacked) -->
+            <!-- Right: UV Index + Sunset -->
             <div class="uv-sunset-col">
                 <div class="weather-card uv-sunset uv-sunset-half">
-                    <div class="card-title">UV Index</div>
+                    <div class="card-title">Today's UV Index</div>
                     <div class="uv-row">
                         <span class="uv-num" id="uvNum">4</span>
                         <span class="uv-bar"><span class="uv-color" id="uvColor" style="width:40%"></span></span>
@@ -42,7 +45,7 @@
                     </div>
                 </div>
                 <div class="weather-card uv-sunset uv-sunset-half">
-                    <div class="card-title">Sunset</div>
+                    <div class="card-title">Today's Sunset</div>
                     <div class="sunset-row">
                         <span class="sun-icon">🌇</span>
                         <span class="sunset-time" id="sunsetTime">7:35 PM</span>
