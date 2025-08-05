@@ -1,81 +1,130 @@
-// Example JSON weather data
-const weather_data = {
-  "1722645600": { "temperature": 28.1, "humidity": 70, "precipitation": 0.0 },
-  "1722649200": { "temperature": 27.6, "humidity": 72, "precipitation": 0.0 },
-  "1722652800": { "temperature": 27.3, "humidity": 73, "precipitation": 0.1 }
-  // Add more hours as needed...
+// Mock hourly data
+const weatherData = {
+  hours: [
+      { hour: "09:00", temperature: 28, icon: "☀️", wind_avg: 13, precipitation: 0.0, humidity: 61 },
+      { hour: "10:00", temperature: 29, icon: "☀️", wind_avg: 12, precipitation: 0.0, humidity: 60 },
+      { hour: "11:00", temperature: 30, icon: "🌤️", wind_avg: 15, precipitation: 0.0, humidity: 59 },
+      { hour: "12:00", temperature: 31, icon: "🌤️", wind_avg: 16, precipitation: 0.0, humidity: 58 },
+      { hour: "13:00", temperature: 32, icon: "🌤️", wind_avg: 17, precipitation: 0.0, humidity: 56 },
+      { hour: "14:00", temperature: 32, icon: "☀️", wind_avg: 17, precipitation: 0.1, humidity: 55 },
+      { hour: "15:00", temperature: 32, icon: "☀️", wind_avg: 14, precipitation: 0.1, humidity: 55 },
+      { hour: "16:00", temperature: 31, icon: "☀️", wind_avg: 13, precipitation: 0.2, humidity: 58 },
+      { hour: "17:00", temperature: 31, icon: "🌥️", wind_avg: 11, precipitation: 0.2, humidity: 60 },
+      { hour: "18:00", temperature: 30, icon: "🌥️", wind_avg: 10, precipitation: 0.3, humidity: 62 }
+  ]
 };
 
-// Function to render the table rows
-function renderWeatherTable(data) {
-  // Sort entries by timestamp (ascending)
-  const sorted = Object.entries(data).sort(([a], [b]) => Number(a) - Number(b));
-  const tbody = document.querySelector('#weather-table tbody');
-  tbody.innerHTML = ""; // Clear existing rows
+// Weekly forecast data
+const weeklyData = [
+  { day: "Sun", icon: "☀️", high: 34, low: 22 },
+  { day: "Mon", icon: "☀️", high: 33, low: 21 },
+  { day: "Tue", icon: "🌤️", high: 32, low: 19 },
+  { day: "Wed", icon: "🌤️", high: 32, low: 19 },
+  { day: "Thu", icon: "🌦️", high: 33, low: 20 },
+  { day: "Fri", icon: "🌦️", high: 36, low: 21 },
+  { day: "Sat", icon: "☀️", high: 36, low: 24 }
+];
 
-  for (const [timestamp, weather] of sorted) {
-    // Convert timestamp to readable date/hour
-    const dateStr = new Date(Number(timestamp) * 1000)
-      .toLocaleString('en-GB', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: '2-digit' });
+// For circular weekly forecast
+let firstDayIndex = 0;
 
-    const row = `<tr>
-      <td>${timestamp}</td>
-      <td>${dateStr}</td>
-      <td>${weather.temperature}</td>
-      <td>${weather.humidity}</td>
-      <td>${weather.precipitation}</td>
-    </tr>`;
-    tbody.insertAdjacentHTML('beforeend', row);
+// Mock 10-day forecast
+const tenDayForecast = [
+  { day: "Today", icon: "☀️", min: 21, max: 32 },
+  { day: "Mon", icon: "☀️", min: 19, max: 32 },
+  { day: "Tue", icon: "☀️", min: 18, max: 32 },
+  { day: "Wed", icon: "☀️", min: 18, max: 33 },
+  { day: "Thu", icon: "☀️", min: 19, max: 33 },
+  { day: "Fri", icon: "☀️", min: 20, max: 36 },
+  { day: "Sat", icon: "☀️", min: 24, max: 36 },
+  { day: "Sun", icon: "☀️", min: 22, max: 35 },
+  { day: "Mon", icon: "☀️", min: 22, max: 35 },
+  { day: "Tue", icon: "☀️", min: 21, max: 36 }
+];
+
+/** Render hourly forecast horizontally */
+function renderHourlyWidget(hours) {
+  const container = document.getElementById("hourlyWidgetScroll");
+  container.innerHTML = "";
+  hours.forEach(item => {
+      const card = document.createElement("div");
+      card.className = "hour-widget-card";
+      card.innerHTML = `
+          <div class="hour-widget-icon">${item.icon}</div>
+          <div class="hour-widget-hour">${item.hour}</div>
+          <div class="hour-widget-temp">${item.temperature}°</div>
+          <div class="hour-widget-meta">
+              💨 ${item.wind_avg} km/h<br>
+              💧 ${item.precipitation} mm<br>
+              🌫️ ${item.humidity}%
+          </div>
+      `;
+      container.appendChild(card);
+  });
+}
+
+/** Render weekly forecast horizontally with circular navigation */
+function renderWeeklyForecast(days, startIdx = 0) {
+  const container = document.getElementById("weeklyForecast");
+  container.innerHTML = "";
+  for(let i = 0; i < 7; i++) {
+      const idx = (startIdx + i) % 7;
+      const item = days[idx];
+      const card = document.createElement("div");
+      card.className = "weekly-card";
+      card.innerHTML = `
+          <div class="weekly-day">${item.day}</div>
+          <div class="weekly-icon">${item.icon}</div>
+          <div>
+              <span class="weekly-temp-low">${item.low}°</span>
+              <span class="weekly-temp-high">${item.high}°</span>
+          </div>
+      `;
+      container.appendChild(card);
   }
 }
 
-// URL of your backend API
-const API_URL = "http://localhost:8000/weather/hourly"; // Change as needed
-
-// Fetch data from the backend and render the table
-function fetchWeatherData() {
-  fetch(API_URL)
-    .then(response => {
-      if (!response.ok) {
-        throw new Error('Failed to fetch weather data');
-      }
-      return response.json();
-    })
-    .then(data => {
-      renderWeatherTable(data);
-    })
-    .catch(error => {
-      const tbody = document.querySelector('#weather-table tbody');
-      tbody.innerHTML = `<tr><td colspan="5">Error loading data: ${error}</td></tr>`;
-      console.error(error);
-    });
+/** Render 10-day forecast table */
+function renderTenDayForecast(days) {
+  const container = document.getElementById("tenDayForecast");
+  container.innerHTML = `<div class="ten-day-table"></div>`;
+  const table = container.firstElementChild;
+  days.forEach(day => {
+      const row = document.createElement("div");
+      row.className = "ten-day-row";
+      row.innerHTML = `
+          <span class="day-label">${day.day}</span>
+          <span class="day-icon">${day.icon}</span>
+          <span class="day-min">${day.min}°</span>
+          <span class="day-range">
+              <span class="day-range-bar min" style="width:38%;"></span>
+              <span class="day-range-bar max" style="width:55%; left:40%;"></span>
+          </span>
+          <span class="day-max">${day.max}°</span>
+      `;
+      table.appendChild(row);
+  });
 }
 
-// Function to render the table rows
-function renderWeatherTable(data) {
-  // If your API returns an array, convert it to the format you want here
-  // Assuming data is a dict: { timestamp: {temperature, humidity, precipitation}, ... }
-  const sorted = Object.entries(data).sort(([a], [b]) => Number(a) - Number(b));
-  const tbody = document.querySelector('#weather-table tbody');
-  tbody.innerHTML = ""; // Clear existing rows
-
-  for (const [timestamp, weather] of sorted) {
-    const dateStr = new Date(Number(timestamp) * 1000)
-      .toLocaleString('en-GB', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: '2-digit' });
-
-    const row = `<tr>
-      <td>${timestamp}</td>
-      <td>${dateStr}</td>
-      <td>${weather.temperature}</td>
-      <td>${weather.humidity}</td>
-      <td>${weather.precipitation}</td>
-    </tr>`;
-    tbody.insertAdjacentHTML('beforeend', row);
-  }
-}
-
-// When the page loads, fetch the weather data from backend API
+// Render everything on page load & set weekly forecast arrows
 document.addEventListener("DOMContentLoaded", () => {
-  renderWeatherTable(weather_data); // Render example data initially
-});
+  renderHourlyWidget(weatherData.hours);
+  renderWeeklyForecast(weeklyData, firstDayIndex);
+  renderTenDayForecast(tenDayForecast);
 
+  // Optional: Set UV & Sunset values dynamically
+  document.getElementById("uvNum").textContent = 4;
+  document.getElementById("uvText").textContent = "Moderate";
+  document.getElementById("uvColor").style.width = "40%";
+  document.getElementById("sunsetTime").textContent = "7:35 PM";
+
+  // Weekly forecast navigation
+  document.getElementById("prevDayBtn").onclick = () => {
+      firstDayIndex = (firstDayIndex - 1 + 7) % 7;
+      renderWeeklyForecast(weeklyData, firstDayIndex);
+  };
+  document.getElementById("nextDayBtn").onclick = () => {
+      firstDayIndex = (firstDayIndex + 1) % 7;
+      renderWeeklyForecast(weeklyData, firstDayIndex);
+  };
+});
