@@ -1,8 +1,8 @@
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from app.db.models.hourModel import WeatherDataHour
-from app.schemas.hour import HourResponse
+from app.db.models.hourORM import WeatherDataHourORM
+from app.schemas.hour import HourResponseModel, HoursResponseModel
 from decouple import config
 import time
 from datetime import datetime
@@ -12,45 +12,48 @@ def get_hours(db: Session, offset: int = 0, count: int = 24):
     t_from = offset_to_timestamp(offset + count, 'hour', now)
     t_to = offset_to_timestamp(offset, 'hour', now)
     # create a dict with placeholders for all hours in the range
-    hours: dict = { hour: None for hour in genenerate_timestamps(t_from, t_to, 'hour') }
+    hours_dict = {hour: None for hour in genenerate_timestamps(t_from, t_to, 'hour')}
     
     # load data from local db:
-    statement = select(WeatherDataHour) \
-        .where(WeatherDataHour.datetime > t_from, WeatherDataHour.datetime < t_to) \
-        .order_by(WeatherDataHour.datetime)
-    for line in db.scalars(statement):
-        hour = int(line.datetime.timestamp())
-        if hour in hours:
-            hours[hour] = line
-       
+    #statement = select(WeatherDataHourORM) \
+    #    .where(WeatherDataHourORM.datetime > t_from, WeatherDataHourORM.datetime < t_to) \
+    #    .order_by(WeatherDataHourORM.datetime)
+    #for line in db.scalars(statement):
+    #    hour = int(line.datetime.timestamp())
+    #    if hour in hours:
+    #        hours[hour] = line
+    
+    hours_model = HoursResponseModel(hours = {})
     match config('DATA_SOURCE', default='mock'):
         case 'mock':
             # For testing/demonstaration, genrate mock weather data
-            for timestamp, data in hours.items():
+            for timestamp, data in hours_dict.items():
                 if data is None:
-                    hours[timestamp] = WeatherDataHour(
-                        datetime = datetime.fromtimestamp(timestamp),
+                    h = HourResponseModel(
+                        timestamp = timestamp,
                         temp = 20 + (timestamp % 3600) / 120,           # Mock temperature
                         humidity = 50 + (timestamp % 3600) / 120,       # Mock humidity
                         precip = (timestamp % 3600) / 60,               # Mock precipitation
                         wind_speed_avg = (timestamp % 10) * 2,          # Mock wind speed 
                         wind_speed_max = (timestamp % 10) * 3           # Mock max wind speed
                     )
+                    hours_model.hours[timestamp] = HourResponseModel.model_validate(h)
         case 'imetos':
             # Fetch remote data from Imetos API
-            imetos_request = WeatherDataHour.imetos_request_factory()
-            remote_hours = imetos_request.get_data(t_from, t_to)
-            for timestamp, data in remote_hours.items():
-                if timestamp in hours:
-                    hours[timestamp] = WeatherDataHour(
-                        datetime = time.localtime(timestamp),
-                        temperature = data.get('temperature', 0),
-                        humidity = data.get('humidity', 0),
-                        wind_speed = data.get('wind_speed', 0),
-                    )
-    
-    hours_valid = { hour: HourResponse.model_validate(data) for hour, data in hours.items() }
-    return [hours_valid]
+            #imetos_request = WeatherDataHour.imetos_request_factory()
+            #remote_hours = imetos_request.get_data(t_from, t_to)
+            #for timestamp, data in remote_hours.items():
+            #    if timestamp in hours:
+            #        hours[timestamp] = WeatherDataHour(
+            #            datetime = time.localtime(timestamp),
+            #            temperature = data.get('temperature', 0),
+            #            humidity = data.get('humidity', 0),
+            #            wind_speed = data.get('wind_speed', 0),
+            #
+            pass
+
+    h = HoursResponseModel.model_validate(hours_model)
+    return h
 
 
 def genenerate_timestamps(t_from: int, t_to: int, interval: str):

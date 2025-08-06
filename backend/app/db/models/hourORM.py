@@ -4,11 +4,11 @@ from app.db.base import Base
 from app.crud.imetosRequest import ImetosRequest
 
 
-class WeatherData(Base):
+class WeatherDataORM(Base):
     """Abstract model for weather station data - base class"""
     __abstract__ = True
 
-    datetime = Column(DateTime, primary_key=True, index=True)
+    timestamp = Column(Integer, primary_key=True, index=True)
 
     SENSORS = {
         "temp_avg":         { "name": "HC Air temperature|avg",     "unit": "(C°)" },
@@ -35,7 +35,7 @@ class WeatherData(Base):
         return res
 
 
-class WeatherDataHour(WeatherData):
+class WeatherDataHourORM(WeatherDataORM):
     """ Model for WeatherData grouped by hours """
     __tablename__ = "hours"
     temp = Column(Float)
@@ -49,8 +49,8 @@ class WeatherDataHour(WeatherData):
         """Create a new imetosRequest for this model's period grouping"""
         return ImetosRequest('hourly')
 
-    def __repr__(self):
-        return f"<WeatherDataHour(datetime={self.datetime}, temp_avg={self.temp}, humidity={self.humidity}, precip={self.precip}, wind_speed_avg={self.wind_speed_avg})>"
+    #def __repr__(self):
+    #    return f"<WeatherDataHour(datetime={self.datetime}, temp_avg={self.temp}, humidity={self.humidity}, precip={self.precip}, wind_speed_avg={self.wind_speed_avg})>"
 
 
 '''
