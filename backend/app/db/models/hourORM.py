@@ -1,7 +1,7 @@
 
 from sqlalchemy import Column, Integer, String, DateTime, Float
 from app.db.base import Base
-from app.crud.imetosRequest import ImetosRequest
+#from app.crud.imetosRequest import ImetosRequest
 
 
 class WeatherDataORM(Base):
@@ -44,10 +44,12 @@ class WeatherDataHourORM(WeatherDataORM):
     wind_speed_avg = Column(Float)
     wind_speed_max = Column(Float)
 
+    '''
     @staticmethod
     def imetos_request_factory():
         """Create a new imetosRequest for this model's period grouping"""
         return ImetosRequest('hourly')
+    '''
 
     #def __repr__(self):
     #    return f"<WeatherDataHour(datetime={self.datetime}, temp_avg={self.temp}, humidity={self.humidity}, precip={self.precip}, wind_speed_avg={self.wind_speed_avg})>"
