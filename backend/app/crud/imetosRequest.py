@@ -2,12 +2,12 @@
 import json
 from datetime import datetime
 #from dateutil.tz import tzlocal
-from Crypto.Hash import HMAC
-from Crypto.Hash import SHA256
+#from Crypto.Hash import HMAC
+#from Crypto.Hash import SHA256
 import requests
 from requests.auth import AuthBase
 from decouple import config
-
+'''
 
 class AuthHmacMetosGet(AuthBase):
     """ Class to perform HMAC encoding.
@@ -90,3 +90,4 @@ class ImetosRequest():
 # j = r.getData(int(time.time()) - 7200, int(time.time()))
 # #print(json.dumps(j))
 # print(json.dumps(r.by_date(j), indent=4))
+'''
