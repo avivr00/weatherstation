@@ -12,7 +12,8 @@ def login_api_user(email: str, password: str, db: Session) -> LoginResponseModel
     user = db.execute(select(UserORM).where(UserORM.email == email)).scalar_one_or_none()
     if user is None or getattr(user, "password", None) != password:
         return LoginResponseModel(message="Invalid email or password", data=None, error="Invalid credentials")
-    access_token = create_access_token(data={'email': user.email})
+    # include token_version to support token revocation/versioning
+    access_token = create_access_token(data={'email': user.email, 'token_version': getattr(user, 'token_version', 0)})
     return LoginResponseModel(message="Login successful", data={"access_token": access_token, "token_type": "bearer"}, error=None)
 
 
@@ -22,6 +23,14 @@ def logout_api_user(token: str, db: Session) -> LogoutResponseModel:
     user = validate_user_from_token(token, db)
     if user is None:
         return LogoutResponseModel(message="Invalid token.", error="User not found or inactive")
+    # increment token_version to invalidate previously issued tokens
+    try:
+        current = getattr(user, "token_version", 0) or 0
+        setattr(user, "token_version", current + 1)
+        db.add(user)
+        db.commit()
+    except Exception:
+        return LogoutResponseModel(message="Logout failed", error="Could not update token version")
     return LogoutResponseModel(message="Logout successful")
     
 
@@ -42,7 +51,8 @@ def register_api_user(first_name: str, last_name: str, email: str, password: str
     db.commit()
     db.refresh(new_user)
     # Create bearer token
-    token = create_access_token({"email": email})
+    # include token_version on creation (defaults to 0)
+    token = create_access_token({"email": email, "token_version": getattr(new_user, 'token_version', 0)})
     return RegisterResponseModel(message="User registered successfully",
                                  data={"access_token": token, "token_type": "bearer"})
 

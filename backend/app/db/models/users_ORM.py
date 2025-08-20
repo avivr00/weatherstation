@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String
+from sqlalchemy import Column, String, Integer
 from app.db.base import Base
 
 class UserORM(Base):
@@ -9,3 +9,5 @@ class UserORM(Base):
     first_name = Column(String, nullable=True)
     last_name = Column(String, nullable=True)
     password = Column(String, nullable=False)
+    # Increment this to invalidate previously issued tokens for the user
+    token_version = Column(Integer, default=0, nullable=False)

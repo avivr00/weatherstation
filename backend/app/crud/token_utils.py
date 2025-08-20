@@ -31,7 +31,11 @@ def validate_user_from_token(token: str, db: Session) -> UserORM | None:
     token_data: dict = validate_access_token(token)
     print(token_data)
     email = token_data.get("email") if token_data else None
+    token_version = token_data.get("token_version") if token_data else None
     user = db.execute(select(UserORM).where(UserORM.email == email)).scalar_one_or_none()
     if user is None:
+        return None
+    # Ensure token_version matches user's current token_version
+    if token_version is None or getattr(user, "token_version", None) != token_version:
         return None
     return user
