@@ -9,5 +9,11 @@ app/
         models/     # SQLAlchemy ORM table definitions
     schemas/        # Pydantic models that define request and response shapes
 
+To activate venv:
+$ source venv/bin/activate
+
 To run test server:
 $ uvicorn app.main:app --reload
+
+To run tests:
+$ python -m pytest -q

@@ -2,7 +2,7 @@ from app.db.models.users_ORM import UserORM
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 import jwt
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from decouple import config
 
 
@@ -12,7 +12,8 @@ DAYS_LOGGED_IN = int(config("DAYS_LOGGED_IN", default=7))
 
 def create_access_token(data: dict, expires_delta: timedelta = timedelta(days=DAYS_LOGGED_IN)):
     to_encode = data.copy()
-    expire = datetime.utcnow() + expires_delta
+    # use timezone-aware UTC datetime to avoid deprecation warnings
+    expire = datetime.now(timezone.utc) + expires_delta
     to_encode.update({"exp": expire})
     print(to_encode)
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
