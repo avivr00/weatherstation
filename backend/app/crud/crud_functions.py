@@ -19,11 +19,10 @@ def login_api_user(email: str, password: str, db: Session) -> LoginResponseModel
 
 def logout_api_user(token: str, db: Session) -> LogoutResponseModel:
     """Endpoint to logout the user this token belongs to"""
-    # TODO: understand JWT validatioon. What needs to be stored in db?
     user = validate_user_from_token(token, db)
     if user is None:
         return LogoutResponseModel(message="Invalid token.", error="User not found or inactive")
-    # increment token_version to invalidate previously issued tokens
+    # We increment token_version to invalidate previously issued tokens
     try:
         current = getattr(user, "token_version", 0) or 0
         setattr(user, "token_version", current + 1)
