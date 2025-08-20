@@ -60,3 +60,35 @@ def test_token_versioning_flow():
     # Old token should now be invalid
     r = client.post("/api/auth/validate", params={"token": token})
     assert r.status_code == 401
+
+
+def test_new_token_after_logout_is_valid_and_old_is_invalid():
+    email = "reissue.token@example.com"
+    password = "reissuepass"
+
+    # Register
+    params = {"first_name": "Re", "last_name": "Issue", "email": email, "password": password}
+    r = client.post("/api/auth/register", params=params)
+    assert r.status_code == 200
+    token1 = r.json()["data"]["access_token"]
+
+    # Validate token1 is valid
+    r = client.post("/api/auth/validate", params={"token": token1})
+    assert r.status_code == 200
+
+    # Logout using token1 -> increments token_version
+    r = client.post("/api/auth/logout", params={"token": token1})
+    assert r.status_code == 200
+
+    # Old token should now be invalid
+    r = client.post("/api/auth/validate", params={"token": token1})
+    assert r.status_code == 401
+
+    # Login again to get a fresh token (token2)
+    r = client.post("/api/auth/login", params={"email": email, "password": password})
+    assert r.status_code == 200
+    token2 = r.json()["data"]["access_token"]
+
+    # New token should be valid
+    r = client.post("/api/auth/validate", params={"token": token2})
+    assert r.status_code == 200
