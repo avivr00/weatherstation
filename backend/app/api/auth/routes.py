@@ -27,6 +27,7 @@ def register(   first_name: str = Query(min_length=0, max_length=100),
                 password: str = Query(min_length=8, max_length=100),
                 db: Session = Depends(get_db)):
     """Endpoint to register a new user"""
+    print(f"[register endpoint] {first_name}, {last_name}, {email}, {password}")
     res = register_api_user(first_name, last_name, email, password, db)
     return check_error(res)
 
@@ -35,19 +36,22 @@ def login(  email: str = Query(min_length=1, max_length=200),
             password: str = Query(min_length=8, max_length=100),
             db: Session = Depends(get_db)):
     """Endpoint for user login"""
+    print(f"[login endpoint] {email}, {password}")
     res = login_api_user(email, password, db)
     return check_error(res)
 
 @router.post("/logout", response_model=LogoutResponseModel)
 def logout(authorization: str = Header(None), db: Session = Depends(get_db)):
     """Endpoint for user logout. Accepts token via Authorization: Bearer <token> header"""
+    print(f"[logout endpoint] {authorization}")
     token = check_token_exists(authorization)
     res = logout_api_user(token, db)
     return check_error(res)
 
 @router.post("/validate", response_model=ValidateResponseModel)
 def validate(authorization: str = Header(None), db: Session = Depends(get_db)):
-    """Endpoint to validate an API token. prAccepts token via Authorization: Bearer <token> header"""
+    """Endpoint to validate an API token. Accepts token via Authorization: Bearer <token> header"""
+    print(f"[validate endpoint] {authorization}")
     token = check_token_exists(authorization)
     res = validate_api_token(token, db)
     return check_error(res)
