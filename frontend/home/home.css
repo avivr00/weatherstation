@@ -181,6 +181,17 @@ body {
     padding: 1rem;
     margin-bottom: 0.75rem;
     background-color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.event-content {
+    flex: 1;
+}
+
+.event-actions {
+    margin-left: 0.5rem;
 }
 
 .event-time {

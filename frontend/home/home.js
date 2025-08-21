@@ -8,6 +8,13 @@ import {
 } from "../API/weatherAPI.js";
 import { getMockEvents, saveMockEvents } from "../API/mockData.js";
 import {
+	createEvent,
+	getUserEvents,
+	getEventById,
+	updateEvent,
+	deleteEvent
+} from "../API/eventsAPI.js";
+import {
 	getUserData,
 	isAuthenticated,
 	clearUserData,
@@ -32,10 +39,10 @@ let userEvents = [];
 let currentLocation = "Tel Aviv";
 
 // Initialize the application
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", async function () {
 	checkAuthentication();
 	setupEventListeners();
-	loadUserEventsData();
+	await loadUserEventsData(); // Wait for events to load
 	renderCalendar();
 	displayWelcomeMessage();
 	loadWeatherData();
@@ -96,16 +103,47 @@ function setupEventListeners() {
 	document.getElementById("logoutBtn").addEventListener("click", logoutUser);
 }
 
-// Load user events
-function loadUserEventsData() {
+// Load user events from backend API
+async function loadUserEventsData() {
 	if (!currentUser) return;
 
-	const allEvents = getMockEvents();
-	userEvents = allEvents.filter((event) => event.userId === currentUser.id);
-
-	// Also load any local events created by the user
-	const localEvents = loadUserEvents(currentUser.id);
-	userEvents = [...userEvents, ...localEvents];
+	try {
+		const response = await getUserEvents();
+		
+		if (response.success) {
+			// Convert backend events to frontend format
+			userEvents = response.data.events.map(event => ({
+				id: event.id,
+				userId: currentUser.id, // For frontend compatibility
+				title: event.title,
+				description: event.description,
+				date: event.date_time.split('T')[0], // Extract date part (YYYY-MM-DD)
+				time: event.date_time.split('T')[1]?.substring(0, 5), // Extract time part (HH:MM)
+				dateTime: event.date_time, // Keep full datetime for backend calls
+				isBackend: true // Mark as backend event
+			}));
+			
+			console.log(`Loaded ${userEvents.length} events from backend`);
+		} else {
+			console.error("Failed to load events:", response.message);
+			// Fallback to mock data if backend fails
+			const allEvents = getMockEvents();
+			userEvents = allEvents.filter((event) => event.userId === currentUser.id);
+			
+			// Also load any local events created by the user
+			const localEvents = loadUserEvents(currentUser.id);
+			userEvents = [...userEvents, ...localEvents];
+		}
+	} catch (error) {
+		console.error("Error loading events:", error);
+		// Fallback to mock data
+		const allEvents = getMockEvents();
+		userEvents = allEvents.filter((event) => event.userId === currentUser.id);
+		
+		// Also load any local events created by the user
+		const localEvents = loadUserEvents(currentUser.id);
+		userEvents = [...userEvents, ...localEvents];
+	}
 }
 
 // Save user events
@@ -249,18 +287,27 @@ function displayEventsForSelectedDate() {
 	let eventsHTML = "";
 	dayEvents.forEach(function (event) {
 		eventsHTML += `
-            <div class="event-item">
-                ${
-									event.time
-										? `<div class="event-time">${event.time}</div>`
-										: ""
-								}
-                <div class="event-title">${event.title}</div>
-                ${
-									event.description
-										? `<div class="event-description">${event.description}</div>`
-										: ""
-								}
+            <div class="event-item" data-event-id="${event.id}">
+                <div class="event-content">
+                    ${
+											event.time
+												? `<div class="event-time">${event.time}</div>`
+												: ""
+										}
+                    <div class="event-title">${event.title}</div>
+                    ${
+											event.description
+												? `<div class="event-description">${event.description}</div>`
+												: ""
+										}
+                </div>
+                ${event.isBackend ? `
+                    <div class="event-actions">
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteEventHandler(${event.id})">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                ` : ''}
             </div>
         `;
 	});
@@ -276,7 +323,7 @@ function openAddEventModal() {
 	modal.show();
 }
 
-function saveNewEvent() {
+async function saveNewEvent() {
 	const title = document.getElementById("eventTitle").value.trim();
 	const date = document.getElementById("eventDate").value;
 	const time = document.getElementById("eventTime").value;
@@ -287,34 +334,64 @@ function saveNewEvent() {
 		return;
 	}
 
-	const newEvent = {
-		id: Date.now(),
-		userId: currentUser.id,
-		title: title,
-		date: date,
-		time: time || null,
-		description: description || null,
-		isLocal: true,
-	};
+	// Create datetime string for backend
+	const dateTime = time ? `${date}T${time}:00` : `${date}T00:00:00`;
 
-	console.log("Adding new event:", newEvent); // Debug log
-	userEvents.push(newEvent);
-	console.log("Total user events:", userEvents.length); // Debug log
+	try {
+		// Show loading state
+		const saveBtn = document.getElementById("saveEventBtn");
+		const originalText = saveBtn.textContent;
+		saveBtn.textContent = "Saving...";
+		saveBtn.disabled = true;
 
-	saveUserEventsData();
+		const response = await createEvent(title, description, dateTime);
+		
+		if (response.success) {
+			console.log("Event created successfully:", response.data);
+			
+			// Add the new event to local array
+			const newEvent = {
+				id: response.data.id,
+				userId: currentUser.id,
+				title: response.data.title,
+				description: response.data.description,
+				date: response.data.date_time.split('T')[0],
+				time: response.data.date_time.split('T')[1]?.substring(0, 5),
+				dateTime: response.data.date_time,
+				isBackend: true
+			};
 
-	// Update the selected date to the event's date so we can see it
-	selectedDate = new Date(date + "T00:00:00");
+			userEvents.push(newEvent);
+			console.log("Total user events:", userEvents.length);
 
-	renderCalendar();
-	updateSelectedDateDisplay();
+			// Update the selected date to the event's date so we can see it
+			selectedDate = new Date(date + "T00:00:00");
 
-	// Reset form and close modal
-	document.getElementById("eventForm").reset();
-	const modal = bootstrap.Modal.getInstance(
-		document.getElementById("addEventModal")
-	);
-	modal.hide();
+			renderCalendar();
+			updateSelectedDateDisplay();
+
+			// Reset form and close modal
+			document.getElementById("eventForm").reset();
+			const modal = bootstrap.Modal.getInstance(
+				document.getElementById("addEventModal")
+			);
+			modal.hide();
+
+			// Show success message
+			alert("Event created successfully!");
+		} else {
+			console.error("Failed to create event:", response.message);
+			alert("Failed to create event: " + response.message);
+		}
+	} catch (error) {
+		console.error("Error creating event:", error);
+		alert("Error creating event: " + error.message);
+	} finally {
+		// Restore button state
+		const saveBtn = document.getElementById("saveEventBtn");
+		saveBtn.textContent = originalText;
+		saveBtn.disabled = false;
+	}
 }
 
 // Weather functions
@@ -612,3 +689,31 @@ function logoutUser() {
 	clearUserData();
 	window.location.href = "../pages/login/login.html";
 }
+
+// Delete event handler (global function for onclick)
+window.deleteEventHandler = async function(eventId) {
+	if (!confirm("Are you sure you want to delete this event?")) {
+		return;
+	}
+
+	try {
+		const response = await deleteEvent(eventId);
+		
+		if (response.success) {
+			// Remove event from local array
+			userEvents = userEvents.filter(event => event.id !== eventId);
+			
+			// Refresh the display
+			renderCalendar();
+			updateSelectedDateDisplay();
+			
+			console.log("Event deleted successfully");
+		} else {
+			console.error("Failed to delete event:", response.message);
+			alert("Failed to delete event: " + response.message);
+		}
+	} catch (error) {
+		console.error("Error deleting event:", error);
+		alert("Error deleting event: " + error.message);
+	}
+};

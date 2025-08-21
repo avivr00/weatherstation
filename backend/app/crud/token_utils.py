@@ -20,12 +20,26 @@ def create_access_token(data: dict, expires_delta: timedelta = timedelta(days=DA
 
 def validate_access_token(token: str) -> dict:
     try:
+        # Add debug logging
+        print(f"[TOKEN_VALIDATION] Received token: '{token}' (length: {len(token)})")
+        
+        # Check if token has the basic JWT structure
+        if not token or token.count('.') != 2:
+            print(f"[TOKEN_VALIDATION] Invalid token format - expected 3 parts separated by dots, got: {token.count('.') + 1} parts")
+            raise ValueError("Invalid token format")
+        
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        print(f"[TOKEN_VALIDATION] Successfully decoded token payload: {payload}")
         return payload
     except jwt.ExpiredSignatureError:
+        print("[TOKEN_VALIDATION] Token has expired")
         raise ValueError("Token has expired")
-    except jwt.InvalidTokenError:
+    except jwt.InvalidTokenError as e:
+        print(f"[TOKEN_VALIDATION] Invalid token error: {e}")
         raise ValueError("Invalid token")
+    except Exception as e:
+        print(f"[TOKEN_VALIDATION] Unexpected error: {e}")
+        raise ValueError("Token validation failed")
 
 def validate_user_from_token(token: str, db: Session) -> UserORM | None:
     token_data: dict = validate_access_token(token)

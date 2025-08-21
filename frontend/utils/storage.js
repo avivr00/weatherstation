@@ -7,8 +7,14 @@
  */
 function saveUserData(userData, rememberMe = false) {
     const storage = rememberMe ? localStorage : sessionStorage;
-    storage.setItem("userToken", userData.token || "logged_in");
-    storage.setItem("userData", JSON.stringify(userData));
+    
+    // Only save if we have a valid token
+    if (userData.token) {
+        storage.setItem("userToken", userData.token);
+        storage.setItem("userData", JSON.stringify(userData));
+    } else {
+        console.error("No valid token provided to saveUserData:", userData);
+    }
 }
 
 /**

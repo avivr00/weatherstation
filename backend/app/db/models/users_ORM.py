@@ -1,4 +1,5 @@
 from sqlalchemy import Column, String, Integer
+from sqlalchemy.orm import relationship
 from app.db.base import Base
 
 class UserORM(Base):
@@ -11,3 +12,6 @@ class UserORM(Base):
     password = Column(String, nullable=False)
     # Increment this to invalidate previously issued tokens for the user
     token_version = Column(Integer, default=0, nullable=False)
+
+    # Relationship to events
+    events = relationship("EventORM", back_populates="user")

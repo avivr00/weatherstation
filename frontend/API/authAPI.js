@@ -45,7 +45,11 @@ const register = async (first_name, last_name, email, password) => {
 
         return {
             success: true,
-            data: data
+            data: {
+                ...data.data,
+                token: data.data.access_token || data.data.token, // Normalize token field
+                user: data.data.user || { first_name, last_name, email } // Add user info if not present
+            }
         };
     } catch (err) {
         return {
@@ -83,7 +87,11 @@ const login = async (email, password) => {
 
         return {
             success: true,
-            data: data
+            data: {
+                ...data.data,
+                token: data.data.access_token || data.data.token, // Normalize token field
+                user: data.data.user || { email: email } // Add user info if not present
+            }
         };
     } catch (err) {
         return {

@@ -1,7 +1,8 @@
 # Pydantic models for API response schemas
 
 from pydantic import BaseModel, ConfigDict
-from typing import Dict, Optional
+from typing import Dict, Optional, List
+from datetime import datetime
 
 # Request models
 class RegisterRequest(BaseModel):
@@ -13,6 +14,16 @@ class RegisterRequest(BaseModel):
 class LoginRequest(BaseModel):
     email: str
     password: str
+
+class EventRequest(BaseModel):
+    title: str
+    description: Optional[str] = None
+    date_time: datetime
+
+class EventUpdateRequest(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    date_time: Optional[datetime] = None
 
 # Response models
 class GenericResponseModel(BaseModel):
@@ -34,4 +45,13 @@ class LogoutResponseModel(GenericResponseModel):
     
 class ValidateResponseModel(GenericResponseModel):
     """Response model for validating API token"""
+
+# Event response models
+class EventResponseModel(GenericResponseModel):
+    """Response model for event operations"""
+    pass
+
+class EventListResponseModel(GenericResponseModel):
+    """Response model for listing events"""
+    pass
     

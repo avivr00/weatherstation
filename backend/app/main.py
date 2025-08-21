@@ -1,7 +1,8 @@
 
 from fastapi import FastAPI, Response
 from starlette.middleware.cors import CORSMiddleware
-from app.api.auth.routes import router as api_router
+from app.api.auth.routes import router as auth_router
+from app.api.events.routes import router as events_router
 from app.db.session import engine
 from app.db.base import Base
 from app.db.models import *
@@ -32,7 +33,8 @@ app.add_middleware(
     ],
 )
 
-app.include_router(api_router, prefix="/api/auth")
+app.include_router(auth_router, prefix="/api/auth")
+app.include_router(events_router, prefix="/api")
 
 @app.get("/")
 def root():
