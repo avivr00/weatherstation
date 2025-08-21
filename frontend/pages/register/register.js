@@ -1,6 +1,6 @@
 // For testing with mock data, import from mockAuthAPI
 // For production with real server, import from authAPI
-import { register } from "../../API/mockAuthAPI.js";
+import { register } from "../../API/authAPI.js";
 
 const form = document.getElementById("registerForm");
 const msgEl = document.getElementById("msg");

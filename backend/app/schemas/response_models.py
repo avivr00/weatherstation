@@ -3,6 +3,18 @@
 from pydantic import BaseModel, ConfigDict
 from typing import Dict, Optional
 
+# Request models
+class RegisterRequest(BaseModel):
+    first_name: str
+    last_name: str
+    email: str
+    password: str
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+# Response models
 class GenericResponseModel(BaseModel):
     """Generic response model for API responses"""
     message: str

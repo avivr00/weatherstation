@@ -1,6 +1,6 @@
 // For testing with mock data, import from mockAuthAPI
 // For production with real server, import from authAPI
-import { login } from "../../API/mockAuthAPI.js";
+import { login } from "../../API/authAPI.js";
 import { saveUserData, isAuthenticated } from "../../utils/storage.js";
 
 const form = document.getElementById("loginForm");

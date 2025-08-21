@@ -2,7 +2,7 @@
 // This will be used when connecting to an actual backend server
 
 const config = {
-    baseURL: "http://localhost:3000", // Change this to your actual server URL
+    baseURL: "http://localhost:8000", // Change this to your actual server URL
     headers: {
         "Content-Type": "application/json"
     }
