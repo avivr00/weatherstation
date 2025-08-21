@@ -122,11 +122,11 @@ def update_event(event_id: int, title: Optional[str], description: Optional[str]
         
         # Update fields if provided
         if title is not None:
-            event.title = title
+            setattr(event, "title", title)
         if description is not None:
-            event.description = description
+            setattr(event, "description", description)
         if date_time is not None:
-            event.date_time = date_time
+            setattr(event, "date_time", date_time)
         
         db.commit()
         db.refresh(event)

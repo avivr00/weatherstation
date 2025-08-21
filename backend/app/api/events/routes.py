@@ -4,6 +4,7 @@ from typing import List
 from app.schemas.response_models import EventResponseModel, EventListResponseModel, EventRequest, EventUpdateRequest
 from app.db.session import get_db
 from app.crud.events_crud import create_event, get_user_events, get_event_by_id, update_event, delete_event
+from app.crud.token_utils import extract_bearer_token
 
 router = APIRouter()
 
@@ -11,27 +12,6 @@ def check_error(res):
     if res.error:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=res.error)
     return res
-
-def extract_bearer_token(authorization: str | None) -> str | None:
-    """Extract the raw token from an Authorization header of form 'Bearer <token>'.
-    Returns the token string or None if header is missing/invalid.
-    """
-    print(f"[EXTRACT_TOKEN] Authorization header: '{authorization}'")
-    
-    if not authorization:
-        print("[EXTRACT_TOKEN] No authorization header provided")
-        return None
-    
-    parts = authorization.split()
-    print(f"[EXTRACT_TOKEN] Split parts: {parts} (count: {len(parts)})")
-    
-    if len(parts) == 2 and parts[0].lower() == "bearer":
-        token = parts[1]
-        print(f"[EXTRACT_TOKEN] Extracted token: '{token}' (length: {len(token)})")
-        return token
-    
-    print(f"[EXTRACT_TOKEN] Invalid format - expected 'Bearer <token>', got: '{authorization}'")
-    return None
 
 @router.post("/events", response_model=EventResponseModel)
 async def create_user_event(

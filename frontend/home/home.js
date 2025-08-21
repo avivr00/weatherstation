@@ -319,7 +319,13 @@ function displayEventsForSelectedDate() {
 function openAddEventModal() {
 	const modal = new bootstrap.Modal(document.getElementById("addEventModal"));
 	const dateInput = document.getElementById("eventDate");
-	dateInput.value = selectedDate.toISOString().split("T")[0];
+	
+	// Format date without timezone conversion to avoid off-by-one day errors
+	const year = selectedDate.getFullYear();
+	const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+	const day = String(selectedDate.getDate()).padStart(2, '0');
+	dateInput.value = `${year}-${month}-${day}`;
+	
 	modal.show();
 }
 
@@ -337,10 +343,12 @@ async function saveNewEvent() {
 	// Create datetime string for backend
 	const dateTime = time ? `${date}T${time}:00` : `${date}T00:00:00`;
 
+	// Get button reference and store original text
+	const saveBtn = document.getElementById("saveEventBtn");
+	const originalText = saveBtn.textContent;
+
 	try {
 		// Show loading state
-		const saveBtn = document.getElementById("saveEventBtn");
-		const originalText = saveBtn.textContent;
 		saveBtn.textContent = "Saving...";
 		saveBtn.disabled = true;
 
@@ -387,8 +395,7 @@ async function saveNewEvent() {
 		console.error("Error creating event:", error);
 		alert("Error creating event: " + error.message);
 	} finally {
-		// Restore button state
-		const saveBtn = document.getElementById("saveEventBtn");
+		// Always restore button state
 		saveBtn.textContent = originalText;
 		saveBtn.disabled = false;
 	}

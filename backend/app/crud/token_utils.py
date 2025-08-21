@@ -1,3 +1,5 @@
+# Some helper functions for dealing with JWT tokens
+
 from app.db.models.users_ORM import UserORM
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -11,6 +13,7 @@ ALGORITHM = str(config("JWT_ALGORITHM", default="HS256"))
 DAYS_LOGGED_IN = int(config("DAYS_LOGGED_IN", default=7))
 
 def create_access_token(data: dict, expires_delta: timedelta = timedelta(days=DAYS_LOGGED_IN)):
+    """Create a JWT access token with the provided data and expiration."""
     to_encode = data.copy()
     # use timezone-aware UTC datetime to avoid deprecation warnings
     expire = datetime.now(timezone.utc) + expires_delta
@@ -19,29 +22,23 @@ def create_access_token(data: dict, expires_delta: timedelta = timedelta(days=DA
     return encoded_jwt
 
 def validate_access_token(token: str) -> dict:
+    """Validate a JWT access token and return the payload if valid."""
     try:
-        # Add debug logging
-        print(f"[TOKEN_VALIDATION] Received token: '{token}' (length: {len(token)})")
-        
         # Check if token has the basic JWT structure
         if not token or token.count('.') != 2:
-            print(f"[TOKEN_VALIDATION] Invalid token format - expected 3 parts separated by dots, got: {token.count('.') + 1} parts")
             raise ValueError("Invalid token format")
         
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        print(f"[TOKEN_VALIDATION] Successfully decoded token payload: {payload}")
         return payload
     except jwt.ExpiredSignatureError:
-        print("[TOKEN_VALIDATION] Token has expired")
         raise ValueError("Token has expired")
     except jwt.InvalidTokenError as e:
-        print(f"[TOKEN_VALIDATION] Invalid token error: {e}")
         raise ValueError("Invalid token")
     except Exception as e:
-        print(f"[TOKEN_VALIDATION] Unexpected error: {e}")
         raise ValueError("Token validation failed")
 
 def validate_user_from_token(token: str, db: Session) -> UserORM | None:
+    """Validate a JWT access token and return the associated user if valid."""
     token_data: dict = validate_access_token(token)
     email = token_data.get("email") if token_data else None
     token_version = token_data.get("token_version") if token_data else None
