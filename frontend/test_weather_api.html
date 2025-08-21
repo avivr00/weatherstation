@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Open-Meteo Weather API Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-result { margin: 10px 0; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .loading { background-color: #fff3cd; border-color: #ffeaa7; }
+    </style>
+</head>
+<body>
+    <h1>Open-Meteo Weather API Test</h1>
+    <button onclick="runTests()">Run Tests</button>
+    <div id="results"></div>
+
+    <script type="module">
+        import { 
+            getCurrentWeatherByCity, 
+            getCurrentWeatherByCoords, 
+            getForecastByCity,
+            isApiKeyConfigured,
+            searchLocations
+        } from './API/weatherAPI.js';
+
+        window.runTests = async function() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '';
+
+            // Test 1: API availability
+            addResult('Testing API availability...', 'loading');
+            const apiAvailable = isApiKeyConfigured();
+            addResult(`API Available: ${apiAvailable}`, apiAvailable ? 'success' : 'error');
+
+            // Test 2: Search locations
+            addResult('Testing location search...', 'loading');
+            try {
+                const searchResult = await searchLocations('Berlin', 1);
+                if (searchResult.success && searchResult.data.length > 0) {
+                    addResult(`Location Search: Found ${searchResult.data[0].name}, ${searchResult.data[0].country}`, 'success');
+                } else {
+                    addResult(`Location Search Failed: ${searchResult.message}`, 'error');
+                }
+            } catch (error) {
+                addResult(`Location Search Error: ${error.message}`, 'error');
+            }
+
+            // Test 3: Current weather by city
+            addResult('Testing current weather by city...', 'loading');
+            try {
+                const weatherResult = await getCurrentWeatherByCity('Berlin');
+                if (weatherResult.success) {
+                    const data = weatherResult.data;
+                    addResult(`Current Weather: ${data.name} - ${Math.round(data.main.temp)}°C, ${data.weather[0].description}`, 'success');
+                } else {
+                    addResult(`Current Weather Failed: ${weatherResult.message}`, 'error');
+                }
+            } catch (error) {
+                addResult(`Current Weather Error: ${error.message}`, 'error');
+            }
+
+            // Test 4: Current weather by coordinates
+            addResult('Testing current weather by coordinates...', 'loading');
+            try {
+                const coordsResult = await getCurrentWeatherByCoords(52.52, 13.41);
+                if (coordsResult.success) {
+                    const data = coordsResult.data;
+                    addResult(`Weather by Coords: ${Math.round(data.main.temp)}°C, ${data.weather[0].description}`, 'success');
+                } else {
+                    addResult(`Weather by Coords Failed: ${coordsResult.message}`, 'error');
+                }
+            } catch (error) {
+                addResult(`Weather by Coords Error: ${error.message}`, 'error');
+            }
+
+            // Test 5: 7-day forecast
+            addResult('Testing 7-day forecast...', 'loading');
+            try {
+                const forecastResult = await getForecastByCity('Berlin');
+                if (forecastResult.success) {
+                    const data = forecastResult.data;
+                    addResult(`Forecast: ${data.list.length} days available`, 'success');
+                } else {
+                    addResult(`Forecast Failed: ${forecastResult.message}`, 'error');
+                }
+            } catch (error) {
+                addResult(`Forecast Error: ${error.message}`, 'error');
+            }
+        };
+
+        function addResult(message, type) {
+            const resultsDiv = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `test-result ${type}`;
+            div.textContent = message;
+            resultsDiv.appendChild(div);
+        }
+    </script>
+</body>
+</html>

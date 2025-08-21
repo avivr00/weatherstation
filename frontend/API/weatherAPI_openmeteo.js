@@ -5,14 +5,8 @@
 const config = {
     weatherBaseURL: "https://api.open-meteo.com/v1",
     geocodingBaseURL: "https://geocoding-api.open-meteo.com/v1",
-    fetchOptions: {
-        method: 'GET',
-        mode: 'cors',
-        cache: 'default',
-        credentials: 'omit',
-        headers: {
-            'Accept': 'application/json'
-        }
+    headers: {
+        "Content-Type": "application/json"
     }
 };
 
@@ -81,9 +75,8 @@ const searchLocations = async (query, count = 10, language = "en") => {
             };
         }
 
-        const url = `${config.geocodingBaseURL}/search?name=${encodeURIComponent(query)}&count=${count}&language=${language}&format=json`;
-        
-        const response = await fetch(url, config.fetchOptions);
+        const url = `${config.geocodingBaseURL}/search?name=${encodeURIComponent(query.trim())}&count=${count}&language=${language}&format=json`;
+        const response = await fetch(url, { headers: config.headers });
 
         if (!response.ok) {
             return {
@@ -143,7 +136,7 @@ const getCurrentWeatherByCoords = async (latitude, longitude, temperatureUnit = 
 
         const url = `${config.weatherBaseURL}/forecast?latitude=${latitude}&longitude=${longitude}&current=${currentParams}&temperature_unit=${temperatureUnit}&wind_speed_unit=${windSpeedUnit}&timezone=auto`;
         
-        const response = await fetch(url, config.fetchOptions);
+        const response = await fetch(url, { headers: config.headers });
 
         if (!response.ok) {
             return {
@@ -287,7 +280,7 @@ const getForecastByCoords = async (latitude, longitude, temperatureUnit = "celsi
 
         const url = `${config.weatherBaseURL}/forecast?latitude=${latitude}&longitude=${longitude}&daily=${dailyParams}&temperature_unit=${temperatureUnit}&wind_speed_unit=${windSpeedUnit}&timezone=auto&forecast_days=7`;
         
-        const response = await fetch(url, config.fetchOptions);
+        const response = await fetch(url, { headers: config.headers });
 
         if (!response.ok) {
             return {
@@ -447,160 +440,6 @@ function isApiKeyConfigured() {
 /**
  * No-op functions for API key management (Open-Meteo doesn't need them)
  */
-/**
- * Get hourly weather forecast by coordinates (up to 7 days)
- * @param {number} latitude - Latitude
- * @param {number} longitude - Longitude
- * @param {string} temperatureUnit - Temperature unit ('celsius' or 'fahrenheit')
- * @param {string} windSpeedUnit - Wind speed unit ('kmh', 'ms', 'mph', 'kn')
- * @returns {Promise<Object>} Response object with hourly forecast data
- */
-const getHourlyForecastByCoords = async (latitude, longitude, temperatureUnit = "celsius", windSpeedUnit = "kmh") => {
-    try {
-        const hourlyParams = [
-            "temperature_2m",
-            "relative_humidity_2m",
-            "apparent_temperature",
-            "precipitation_probability",
-            "precipitation",
-            "rain",
-            "showers",
-            "snowfall",
-            "weather_code",
-            "cloud_cover",
-            "wind_speed_10m",
-            "wind_direction_10m",
-            "wind_gusts_10m",
-            "uv_index",
-            "is_day"
-        ].join(",");
-
-        const url = `${config.weatherBaseURL}/forecast?latitude=${latitude}&longitude=${longitude}&hourly=${hourlyParams}&temperature_unit=${temperatureUnit}&wind_speed_unit=${windSpeedUnit}&timezone=auto&forecast_days=7`;
-        
-        const response = await fetch(url, config.fetchOptions);
-
-        if (!response.ok) {
-            return {
-                success: false,
-                message: `Hourly forecast API failed: HTTP ${response.status}`
-            };
-        }
-
-        const data = await response.json();
-        
-        if (data.error) {
-            return {
-                success: false,
-                message: data.reason || "Hourly forecast data fetch failed"
-            };
-        }
-
-        // Transform to a format that's easy to work with
-        const hourly = data.hourly;
-        const hourlyList = hourly.time.map((time, index) => {
-            const weatherInfo = getWeatherInfo(hourly.weather_code[index], hourly.is_day[index]);
-            
-            return {
-                dt: Math.floor(new Date(time).getTime() / 1000),
-                dt_txt: time, // ISO string format
-                main: {
-                    temp: hourly.temperature_2m[index],
-                    feels_like: hourly.apparent_temperature[index],
-                    humidity: hourly.relative_humidity_2m[index],
-                    pressure: null // Not available in hourly data
-                },
-                weather: [{
-                    id: hourly.weather_code[index],
-                    main: weatherInfo.description.split(':')[0],
-                    description: weatherInfo.description,
-                    icon: weatherInfo.icon
-                }],
-                wind: {
-                    speed: hourly.wind_speed_10m[index],
-                    deg: hourly.wind_direction_10m[index],
-                    gust: hourly.wind_gusts_10m[index]
-                },
-                rain: hourly.rain[index] ? { "1h": hourly.rain[index] } : undefined,
-                snow: hourly.snowfall[index] ? { "1h": hourly.snowfall[index] } : undefined,
-                pop: hourly.precipitation_probability[index] / 100, // Convert percentage to decimal
-                clouds: { all: hourly.cloud_cover[index] },
-                uv_index: hourly.uv_index[index],
-                visibility: null // Not available
-            };
-        });
-
-        const transformedData = {
-            cod: "200",
-            message: 0,
-            cnt: hourlyList.length,
-            list: hourlyList,
-            city: {
-                id: 0,
-                name: "Location",
-                coord: { lat: data.latitude, lon: data.longitude },
-                country: data.timezone?.split('/')[0] || '',
-                timezone: data.utc_offset_seconds
-            }
-        };
-
-        return {
-            success: true,
-            data: transformedData
-        };
-    } catch (err) {
-        return {
-            success: false,
-            message: err.message || "Network error while fetching hourly forecast data"
-        };
-    }
-};
-
-/**
- * Get hourly weather forecast by city name
- * @param {string} city - City name
- * @param {string} temperatureUnit - Temperature unit ('celsius' or 'fahrenheit')
- * @param {string} windSpeedUnit - Wind speed unit ('kmh', 'ms', 'mph', 'kn')
- * @returns {Promise<Object>} Response object with hourly forecast data
- */
-const getHourlyForecastByCity = async (city, temperatureUnit = "celsius", windSpeedUnit = "kmh") => {
-    try {
-        // First, search for the city to get coordinates
-        const locationSearch = await searchLocations(city, 1);
-        
-        if (!locationSearch.success) {
-            return {
-                success: false,
-                message: locationSearch.message
-            };
-        }
-
-        if (!locationSearch.data || locationSearch.data.length === 0) {
-            return {
-                success: false,
-                message: `City "${city}" not found. Please check the spelling and try again.`
-            };
-        }
-
-        const location = locationSearch.data[0];
-        const forecastResult = await getHourlyForecastByCoords(location.latitude, location.longitude, temperatureUnit, windSpeedUnit);
-        
-        if (forecastResult.success) {
-            // Update city information
-            forecastResult.data.city.name = location.name;
-            if (location.country) {
-                forecastResult.data.city.country = location.country_code || '';
-            }
-        }
-
-        return forecastResult;
-    } catch (err) {
-        return {
-            success: false,
-            message: err.message || "Network error while fetching hourly forecast data"
-        };
-    }
-};
-
 function setApiKey(apiKey) {
     console.log("Open-Meteo doesn't require an API key");
 }
@@ -614,8 +453,6 @@ export {
     getCurrentWeatherByCoords, 
     getForecastByCity, 
     getForecastByCoords,
-    getHourlyForecastByCity,
-    getHourlyForecastByCoords,
     getWeatherIconUrl,
     setApiKey,
     storeApiKey,

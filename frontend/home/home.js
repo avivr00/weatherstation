@@ -3,6 +3,8 @@ import {
 	getCurrentWeatherByCoords,
 	getForecastByCity,
 	getForecastByCoords,
+	getHourlyForecastByCity,
+	getHourlyForecastByCoords,
 	getWeatherIconUrl,
 	isApiKeyConfigured
 } from "../API/weatherAPI.js";
@@ -37,6 +39,10 @@ let selectedDate = new Date(); // Set to today initially
 let currentUser = null;
 let userEvents = [];
 let currentLocation = "Tel Aviv";
+let currentCoordinates = null; // Store coordinates when using current location
+let cachedForecastData = null; // Cache forecast data to avoid repeated API calls
+let cachedHourlyForecastData = null; // Cache hourly forecast data
+let lastForecastUpdate = null; // Track when forecast was last updated
 
 // Initialize the application
 document.addEventListener("DOMContentLoaded", async function () {
@@ -286,6 +292,10 @@ function displayEventsForSelectedDate() {
 
 	let eventsHTML = "";
 	dayEvents.forEach(function (event) {
+		// Get weather forecast for this specific event time
+		const eventWeather = getWeatherForEventTime(event.date, event.time);
+		const uvInfo = eventWeather ? getUVIndexInfo(eventWeather.uv_index) : null;
+		
 		eventsHTML += `
             <div class="event-item" data-event-id="${event.id}">
                 <div class="event-content">
@@ -300,6 +310,21 @@ function displayEventsForSelectedDate() {
 												? `<div class="event-description">${event.description}</div>`
 												: ""
 										}
+                    ${eventWeather ? `
+                        <div class="event-weather mt-2">
+                            <div class="d-flex align-items-center">
+                                <span class="me-2" style="font-size: 20px;">${eventWeather.icon}</span>
+                                <div class="small">
+                                    <div class="fw-bold">${Math.round(eventWeather.temp)}°C, ${eventWeather.description}</div>
+                                    <div class="text-muted">
+                                        Feels like ${Math.round(eventWeather.feels_like)}°C in ${eventWeather.location}
+                                        ${eventWeather.precipitation > 0 ? ` • ${Math.round(eventWeather.precipitation * 100)}% rain` : ''}
+                                        ${uvInfo ? ` • UV ${uvInfo.level} (${uvInfo.description}) ${uvInfo.icon}` : ''}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    ` : ''}
                 </div>
                 ${event.isBackend ? `
                     <div class="event-actions">
@@ -403,9 +428,9 @@ async function saveNewEvent() {
 
 // Weather functions
 async function loadWeatherData() {
-	// Check if API key is configured
+	// Check if weather API is available
 	if (!isApiKeyConfigured()) {
-		showWeatherError('OpenWeatherMap API key not configured. <br><a href="#" onclick="promptForApiKey()" class="text-decoration-underline">Click here to add your API key</a><br><small class="text-muted">Get a free key from <a href="https://openweathermap.org/api" target="_blank" class="text-decoration-underline">openweathermap.org</a></small>');
+		showWeatherError('Weather data is loading...<br><small class="text-muted">Using Open-Meteo free weather API</small>');
 		return;
 	}
 
@@ -429,24 +454,11 @@ async function loadWeatherData() {
 	}
 }
 
-// Function to prompt user for API key
+// Function to prompt user for API key (not needed for Open-Meteo)
 window.promptForApiKey = function() {
-	const apiKey = prompt(
-		'Please enter your OpenWeatherMap API key:\n\n' +
-		'1. Go to https://openweathermap.org/api\n' +
-		'2. Sign up for a free account\n' +
-		'3. Get your API key\n' +
-		'4. Paste it here:'
-	);
-	
-	if (apiKey && apiKey.trim()) {
-		// Store the API key
-		import('../API/weatherAPI.js').then(module => {
-			module.storeApiKey(apiKey.trim());
-			// Reload weather data
-			loadWeatherData();
-		});
-	}
+	// Open-Meteo doesn't require an API key
+	console.log("Open-Meteo doesn't require an API key - automatically loading weather data");
+	loadWeatherData();
 };
 
 async function searchWeatherByCity() {
@@ -481,6 +493,10 @@ async function getWeatherForLocation(location) {
 		const response = await getCurrentWeatherByCity(location);
 
 		if (response.success) {
+			// Update location tracking (clear coordinates since we're using city name)
+			currentCoordinates = null;
+			currentLocation = location;
+			
 			displayCurrentWeather(response.data);
 			document.getElementById("locationInput").value = location;
 		} else {
@@ -499,8 +515,11 @@ async function getWeatherByCoordinates(lat, lon) {
 		console.log("response", response);
 
 		if (response.success) {
-			displayCurrentWeather(response.data);
+			// Update location tracking
+			currentCoordinates = { lat, lon };
 			currentLocation = response.data.name;
+			
+			displayCurrentWeather(response.data, lat, lon);
 			document.getElementById("locationInput").value = response.data.name;
 		} else {
 			showWeatherError(response.message || "Unable to fetch weather data");
@@ -511,7 +530,7 @@ async function getWeatherByCoordinates(lat, lon) {
 	}
 }
 
-function displayCurrentWeather(data) {
+function displayCurrentWeather(data, lat = null, lon = null) {
 	const currentWeatherEl = document.getElementById("currentWeather");
 	const temp = Math.round(data.main.temp);
 	const description = data.weather[0].description;
@@ -522,7 +541,7 @@ function displayCurrentWeather(data) {
             <div class="weather-location mb-2">${data.name}, ${data.sys.country}</div>
             <div class="weather-temp">${temp}°C</div>
             <div class="weather-description">
-                <img src="${iconUrl}" alt="${description}" class="weather-icon" style="width: 50px; height: 50px;">
+                <span class="weather-icon" style="font-size: 50px;">${iconUrl}</span>
                 ${description}
             </div>
             <div class="weather-details">
@@ -536,7 +555,7 @@ function displayCurrentWeather(data) {
                 </div>
                 <div class="weather-detail">
                     <div class="weather-detail-label">Wind</div>
-                    <div class="weather-detail-value">${Math.round(data.wind.speed)} m/s</div>
+                    <div class="weather-detail-value">${Math.round(data.wind.speed)} km/h</div>
                 </div>
                 <div class="weather-detail">
                     <div class="weather-detail-label">Pressure</div>
@@ -547,7 +566,13 @@ function displayCurrentWeather(data) {
     `;
 
 	// Load real forecast data
-	loadRealForecast(data.name);
+	if (lat !== null && lon !== null) {
+		// Use coordinates for forecast when available (for current location)
+		loadRealForecastByCoords(lat, lon);
+	} else {
+		// Use city name for forecast (for searched locations)
+		loadRealForecast(data.name);
+	}
 }
 
 async function loadRealForecast(location) {
@@ -564,42 +589,33 @@ async function loadRealForecast(location) {
 	`;
 
 	try {
-		const response = await getForecastByCity(location);
+		// Load both daily and hourly forecasts
+		const [dailyResponse, hourlyResponse] = await Promise.all([
+			getForecastByCity(location),
+			getHourlyForecastByCity(location)
+		]);
 		
-		if (!response.success) {
+		if (!dailyResponse.success) {
 			forecastEl.innerHTML = `
 				<div class="text-center text-muted small">
 					<i class="bi bi-exclamation-triangle"></i>
-					<div class="mt-1">${response.message}</div>
+					<div class="mt-1">${dailyResponse.message}</div>
 				</div>
 			`;
 			return;
 		}
 
-		const forecast = response.data;
-		const dailyForecasts = processForecastData(forecast.list);
-		
-		let forecastHTML = "";
-		dailyForecasts.slice(0, 5).forEach(function (day, index) {
-			const dayName = index === 0 ? 'Today' : new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' });
-			const iconUrl = getWeatherIconUrl(day.icon);
-			
-			forecastHTML += `
-				<div class="forecast-item">
-					<div class="forecast-date">${dayName}</div>
-					<div class="forecast-weather">
-						<img src="${iconUrl}" alt="${day.description}" class="forecast-icon" style="width: 24px; height: 24px;">
-						<span class="forecast-desc">${day.description}</span>
-					</div>
-					<div class="forecast-temps">
-						<span class="forecast-high">${day.high}°</span>
-						<span class="forecast-low">${day.low}°</span>
-					</div>
-				</div>
-			`;
-		});
+		// Cache hourly forecast data for event-specific weather
+		if (hourlyResponse.success) {
+			cachedHourlyForecastData = {
+				forecasts: hourlyResponse.data.list,
+				location: currentLocation,
+				coordinates: currentCoordinates,
+				timestamp: new Date()
+			};
+		}
 
-		forecastEl.innerHTML = forecastHTML;
+		displayForecastData(dailyResponse.data);
 	} catch (error) {
 		console.error("Forecast error:", error);
 		forecastEl.innerHTML = `
@@ -611,63 +627,193 @@ async function loadRealForecast(location) {
 	}
 }
 
-function processForecastData(forecastList) {
-	const dailyData = {};
+async function loadRealForecastByCoords(lat, lon) {
+	const forecastEl = document.getElementById("weatherForecast");
 	
-	// Group forecast data by date
-	forecastList.forEach(item => {
-		const date = item.dt_txt.split(' ')[0]; // Get date part (YYYY-MM-DD)
+	// Show loading state
+	forecastEl.innerHTML = `
+		<div class="text-center">
+			<div class="spinner-border text-primary spinner-border-sm" role="status">
+				<span class="visually-hidden">Loading forecast...</span>
+			</div>
+			<div class="mt-2 small">Loading forecast...</div>
+		</div>
+	`;
+
+	try {
+		// Load both daily and hourly forecasts
+		const [dailyResponse, hourlyResponse] = await Promise.all([
+			getForecastByCoords(lat, lon),
+			getHourlyForecastByCoords(lat, lon)
+		]);
 		
-		if (!dailyData[date]) {
-			dailyData[date] = {
-				date: date,
-				temps: [],
-				descriptions: [],
-				icons: []
+		if (!dailyResponse.success) {
+			forecastEl.innerHTML = `
+				<div class="text-center text-muted small">
+					<i class="bi bi-exclamation-triangle"></i>
+					<div class="mt-1">${dailyResponse.message}</div>
+				</div>
+			`;
+			return;
+		}
+
+		// Cache hourly forecast data for event-specific weather
+		if (hourlyResponse.success) {
+			cachedHourlyForecastData = {
+				forecasts: hourlyResponse.data.list,
+				location: currentLocation,
+				coordinates: currentCoordinates,
+				timestamp: new Date()
 			};
 		}
-		
-		dailyData[date].temps.push(item.main.temp);
-		dailyData[date].descriptions.push(item.weather[0].description);
-		dailyData[date].icons.push(item.weather[0].icon);
-	});
+
+		displayForecastData(dailyResponse.data);
+	} catch (error) {
+		console.error("Forecast error:", error);
+		forecastEl.innerHTML = `
+			<div class="text-center text-muted small">
+				<i class="bi bi-exclamation-triangle"></i>
+				<div class="mt-1">Unable to load forecast</div>
+			</div>
+		`;
+	}
+}
+
+function displayForecastData(forecast) {
+	const forecastEl = document.getElementById("weatherForecast");
+	const forecastTitleEl = document.getElementById("forecastTitle");
+	const dailyForecasts = processForecastData(forecast.list);
 	
-	// Convert to array and calculate daily highs/lows
-	return Object.values(dailyData).map(day => {
-		const high = Math.round(Math.max(...day.temps));
-		const low = Math.round(Math.min(...day.temps));
+	// Update the forecast title with location
+	if (forecastTitleEl) {
+		forecastTitleEl.innerHTML = `<i class="bi bi-cloud-sun"></i> 5-Day Forecast for ${currentLocation}`;
+	}
+	
+	// Cache the forecast data
+	cachedForecastData = {
+		forecasts: dailyForecasts,
+		location: currentLocation,
+		coordinates: currentCoordinates,
+		timestamp: new Date()
+	};
+	lastForecastUpdate = new Date();
+	
+	let forecastHTML = "";
+	dailyForecasts.slice(0, 5).forEach(function (day, index) {
+		const dayName = index === 0 ? 'Today' : new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' });
+		const iconUrl = getWeatherIconUrl(day.icon);
 		
-		// Use the most common weather description and icon
-		const description = getMostCommon(day.descriptions);
-		const icon = getMostCommon(day.icons);
+		forecastHTML += `
+			<div class="forecast-item">
+				<div class="forecast-date">${dayName}</div>
+				<div class="forecast-weather">
+					<span class="forecast-icon" style="font-size: 24px;">${iconUrl}</span>
+					<span class="forecast-desc">${day.description}</span>
+				</div>
+				<div class="forecast-temps">
+					<span class="forecast-high">${day.high}°</span>
+					<span class="forecast-low">${day.low}°</span>
+				</div>
+			</div>
+		`;
+	});
+
+	forecastEl.innerHTML = forecastHTML;
+	
+	// Update weather for events when forecast data changes
+	displayEventsForSelectedDate();
+}
+
+function processForecastData(forecastList) {
+	// Open-Meteo returns daily forecast data directly, no need to group by date
+	return forecastList.map(item => {
+		const date = new Date(item.dt * 1000); // Convert Unix timestamp to Date
+		const dateString = date.toISOString().split('T')[0]; // YYYY-MM-DD format
 		
 		return {
-			date: day.date,
-			high: high,
-			low: low,
-			description: description,
-			icon: icon
+			date: dateString,
+			high: Math.round(item.main.temp_max),
+			low: Math.round(item.main.temp_min),
+			description: item.weather[0].description,
+			icon: item.weather[0].icon
 		};
 	});
 }
 
-function getMostCommon(arr) {
-	const frequency = {};
-	let maxCount = 0;
-	let mostCommon = arr[0];
+// Mock weather functions removed - now using free Open-Meteo API
+
+// Get weather forecast for specific event time
+function getWeatherForEventTime(eventDate, eventTime) {
+	// Check if we have hourly forecast data
+	if (!cachedHourlyForecastData || !cachedHourlyForecastData.forecasts || !eventTime) {
+		return null;
+	}
 	
-	arr.forEach(item => {
-		frequency[item] = (frequency[item] || 0) + 1;
-		if (frequency[item] > maxCount) {
-			maxCount = frequency[item];
-			mostCommon = item;
+	try {
+		// Create a DateTime object for the event
+		const eventDateTime = new Date(`${eventDate}T${eventTime}:00`);
+		
+		// Find the closest hourly forecast to the event time
+		let closestForecast = null;
+		let minTimeDiff = Infinity;
+		
+		cachedHourlyForecastData.forecasts.forEach(forecast => {
+			const forecastTime = new Date(forecast.dt_txt);
+			const timeDiff = Math.abs(eventDateTime.getTime() - forecastTime.getTime());
+			
+			if (timeDiff < minTimeDiff) {
+				minTimeDiff = timeDiff;
+				closestForecast = forecast;
+			}
+		});
+		
+		if (!closestForecast) {
+			return null;
 		}
-	});
-	
-	return mostCommon;
+		
+		// Only show forecast if it's within 2 hours of the event time
+		const maxDiffHours = 2 * 60 * 60 * 1000; // 2 hours in milliseconds
+		if (minTimeDiff > maxDiffHours) {
+			return null;
+		}
+		
+		return {
+			temp: closestForecast.main.temp,
+			feels_like: closestForecast.main.feels_like,
+			description: closestForecast.weather[0].description,
+			icon: getWeatherIconUrl(closestForecast.weather[0].icon),
+			precipitation: closestForecast.pop,
+			humidity: closestForecast.main.humidity,
+			wind_speed: closestForecast.wind.speed,
+			uv_index: closestForecast.uv_index,
+			location: cachedHourlyForecastData.location || currentLocation
+		};
+	} catch (error) {
+		console.error("Error getting weather for event time:", error);
+		return null;
+	}
 }
 
-// Mock weather functions removed - now using real OpenWeatherMap API
+// Get UV index description and safety level
+function getUVIndexInfo(uvIndex) {
+	if (uvIndex === null || uvIndex === undefined) {
+		return null;
+	}
+	
+	const uv = Math.round(uvIndex * 10) / 10; // Round to 1 decimal place
+	
+	if (uv <= 2) {
+		return { level: uv, description: "Low", color: "#289500", icon: "🟢" };
+	} else if (uv <= 5) {
+		return { level: uv, description: "Moderate", color: "#F7D000", icon: "🟡" };
+	} else if (uv <= 7) {
+		return { level: uv, description: "High", color: "#F85900", icon: "🟠" };
+	} else if (uv <= 10) {
+		return { level: uv, description: "Very High", color: "#D8001D", icon: "🔴" };
+	} else {
+		return { level: uv, description: "Extreme", color: "#6B49C8", icon: "🟣" };
+	}
+}
 
 function showWeatherLoading() {
 	const currentWeatherEl = document.getElementById("currentWeather");
