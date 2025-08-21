@@ -15,7 +15,6 @@ def create_access_token(data: dict, expires_delta: timedelta = timedelta(days=DA
     # use timezone-aware UTC datetime to avoid deprecation warnings
     expire = datetime.now(timezone.utc) + expires_delta
     to_encode.update({"exp": expire})
-    print(to_encode)
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
@@ -30,7 +29,6 @@ def validate_access_token(token: str) -> dict:
 
 def validate_user_from_token(token: str, db: Session) -> UserORM | None:
     token_data: dict = validate_access_token(token)
-    print(token_data)
     email = token_data.get("email") if token_data else None
     token_version = token_data.get("token_version") if token_data else None
     user = db.execute(select(UserORM).where(UserORM.email == email)).scalar_one_or_none()
@@ -40,3 +38,14 @@ def validate_user_from_token(token: str, db: Session) -> UserORM | None:
     if token_version is None or getattr(user, "token_version", None) != token_version:
         return None
     return user
+
+def extract_bearer_token(authorization: str | None) -> str | None:
+    """Extract the raw token from an Authorization header of form 'Bearer <token>'.
+    Returns the token string or None if header is missing/invalid.
+    """
+    if not authorization:
+        return None
+    parts = authorization.split()
+    if len(parts) == 2 and parts[0].lower() == "bearer":
+        return parts[1]
+    return None

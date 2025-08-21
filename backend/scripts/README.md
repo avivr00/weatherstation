@@ -35,11 +35,4 @@ Safety notes
 CI / Tests
 - For tests, prefer using an in-memory DB or ensure the migration script runs in test setup.
  
-Starting on hosts (Render)
-- A small helper `scripts/start.sh` is provided to run migrations at deploy, then start the Uvicorn server.
-- Render can run this script as the start command so every deploy will apply migrations before the app starts.
 
-Example Render start command:
-  bash scripts/start.sh
-
-Safety note: the migration runner backs up the DB file before applying changes. For heavy production migrations prefer a robust strategy (dump, migrate, restore on failure) or use Alembic.
