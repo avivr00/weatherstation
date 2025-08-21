@@ -51,14 +51,16 @@ async function handleRegistration(event) {
             formData.password
         );
         
-        if (response.success) {
+        if (response && response.success === true) {
             showMessage("Registration successful! Redirecting to login...", "success");
             
-            setTimeout(() => {
-                window.location.href = "../login/login.html";
-            }, 1500);
+            // Clear the form
+            form.reset();
+            
+            // Redirect to login page
+            window.location.href = "../login/login.html";
         } else {
-            showMessage(response.message || "Registration failed.", "error");
+            showMessage(response?.message || "Registration failed.", "error");
         }
     } catch (error) {
         showMessage(error.message || "Registration failed.", "error");
