@@ -294,7 +294,7 @@ function displayEventsForSelectedDate() {
 	dayEvents.forEach(function (event) {
 		// Get weather forecast for this specific event time
 		const eventWeather = getWeatherForEventTime(event.date, event.time);
-		const uvInfo = eventWeather ? getUVIndexInfo(eventWeather.uv_index) : null;
+		const uvInfo = eventWeather && !eventWeather.unavailable ? getUVIndexInfo(eventWeather.uv_index) : null;
 		
 		eventsHTML += `
             <div class="event-item" data-event-id="${event.id}">
@@ -312,17 +312,23 @@ function displayEventsForSelectedDate() {
 										}
                     ${eventWeather ? `
                         <div class="event-weather mt-2">
-                            <div class="d-flex align-items-center">
-                                <span class="me-2" style="font-size: 20px;">${eventWeather.icon}</span>
-                                <div class="small">
-                                    <div class="fw-bold">${Math.round(eventWeather.temp)}°C, ${eventWeather.description}</div>
-                                    <div class="text-muted">
-                                        Feels like ${Math.round(eventWeather.feels_like)}°C in ${eventWeather.location}
-                                        ${eventWeather.precipitation > 0 ? ` • ${Math.round(eventWeather.precipitation * 100)}% rain` : ''}
-                                        ${uvInfo ? ` • UV ${uvInfo.level} (${uvInfo.description}) ${uvInfo.icon}` : ''}
+                            ${eventWeather.unavailable ? `
+                                <div class="text-muted small">
+                                    ${getUnavailableWeatherMessage(eventWeather.reason)}
+                                </div>
+                            ` : `
+                                <div class="d-flex align-items-center">
+                                    <span class="me-2" style="font-size: 20px;">${eventWeather.icon}</span>
+                                    <div class="small">
+                                        <div class="fw-bold">${Math.round(eventWeather.temp)}°C, ${eventWeather.description}</div>
+                                        <div class="text-muted">
+                                            Feels like ${Math.round(eventWeather.feels_like)}°C in ${eventWeather.location}
+                                            ${eventWeather.precipitation > 0 ? ` • ${Math.round(eventWeather.precipitation * 100)}% rain` : ''}
+                                            ${uvInfo ? ` • UV ${uvInfo.level} (${uvInfo.description}) ${uvInfo.icon}` : ''}
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                            `}
                         </div>
                     ` : ''}
                 </div>
@@ -538,7 +544,7 @@ function displayCurrentWeather(data, lat = null, lon = null) {
 
 	currentWeatherEl.innerHTML = `
         <div class="weather-current">
-            <div class="weather-location mb-2">${data.name}, ${data.sys.country}</div>
+            <div class="text-muted small mb-2">Weather right now in ${data.name}, ${data.sys.country}</div>
             <div class="weather-temp">${temp}°C</div>
             <div class="weather-description">
                 <span class="weather-icon" style="font-size: 50px;">${iconUrl}</span>
@@ -686,7 +692,7 @@ function displayForecastData(forecast) {
 	
 	// Update the forecast title with location
 	if (forecastTitleEl) {
-		forecastTitleEl.innerHTML = `<i class="bi bi-cloud-sun"></i> 5-Day Forecast for ${currentLocation}`;
+		forecastTitleEl.innerHTML = `<i class="bi"></i> 5-Day Forecast for ${currentLocation}`;
 	}
 	
 	// Cache the forecast data
@@ -746,12 +752,25 @@ function processForecastData(forecastList) {
 function getWeatherForEventTime(eventDate, eventTime) {
 	// Check if we have hourly forecast data
 	if (!cachedHourlyForecastData || !cachedHourlyForecastData.forecasts || !eventTime) {
-		return null;
+		return { unavailable: true, reason: "no_time" };
 	}
 	
 	try {
 		// Create a DateTime object for the event
 		const eventDateTime = new Date(`${eventDate}T${eventTime}:00`);
+		const now = new Date();
+		
+		// Check if event is too far in the past (more than 1 day ago)
+		const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+		if (eventDateTime < oneDayAgo) {
+			return { unavailable: true, reason: "past" };
+		}
+		
+		// Check if event is too far in the future (forecast covers 14 days)
+		const fourteenDaysFromNow = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+		if (eventDateTime > fourteenDaysFromNow) {
+			return { unavailable: true, reason: "future" };
+		}
 		
 		// Find the closest hourly forecast to the event time
 		let closestForecast = null;
@@ -768,13 +787,13 @@ function getWeatherForEventTime(eventDate, eventTime) {
 		});
 		
 		if (!closestForecast) {
-			return null;
+			return { unavailable: true, reason: "no_data" };
 		}
 		
 		// Only show forecast if it's within 2 hours of the event time
 		const maxDiffHours = 2 * 60 * 60 * 1000; // 2 hours in milliseconds
 		if (minTimeDiff > maxDiffHours) {
-			return null;
+			return { unavailable: true, reason: "no_close_match" };
 		}
 		
 		return {
@@ -790,7 +809,7 @@ function getWeatherForEventTime(eventDate, eventTime) {
 		};
 	} catch (error) {
 		console.error("Error getting weather for event time:", error);
-		return null;
+		return { unavailable: true, reason: "error" };
 	}
 }
 
@@ -812,6 +831,26 @@ function getUVIndexInfo(uvIndex) {
 		return { level: uv, description: "Very High", color: "#D8001D", icon: "🔴" };
 	} else {
 		return { level: uv, description: "Extreme", color: "#6B49C8", icon: "🟣" };
+	}
+}
+
+// Get user-friendly message for unavailable weather forecast
+function getUnavailableWeatherMessage(reason) {
+	switch (reason) {
+		case "no_time":
+			return "⏱️ No forecast (no time specified)";
+		case "past":
+			return "📅 No forecast (event in past)";
+		case "future":
+			return "🔮 No forecast (beyond 14-day range)";
+		case "no_data":
+			return "❌ No forecast data available";
+		case "no_close_match":
+			return "⏰ No forecast (time too imprecise)";
+		case "error":
+			return "⚠️ Forecast unavailable";
+		default:
+			return "❓ No forecast available";
 	}
 }
 

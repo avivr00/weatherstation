@@ -285,7 +285,7 @@ const getForecastByCoords = async (latitude, longitude, temperatureUnit = "celsi
             "sunset"
         ].join(",");
 
-        const url = `${config.weatherBaseURL}/forecast?latitude=${latitude}&longitude=${longitude}&daily=${dailyParams}&temperature_unit=${temperatureUnit}&wind_speed_unit=${windSpeedUnit}&timezone=auto&forecast_days=7`;
+        const url = `${config.weatherBaseURL}/forecast?latitude=${latitude}&longitude=${longitude}&daily=${dailyParams}&temperature_unit=${temperatureUnit}&wind_speed_unit=${windSpeedUnit}&timezone=auto&forecast_days=14`;
         
         const response = await fetch(url, config.fetchOptions);
 
@@ -475,7 +475,7 @@ const getHourlyForecastByCoords = async (latitude, longitude, temperatureUnit = 
             "is_day"
         ].join(",");
 
-        const url = `${config.weatherBaseURL}/forecast?latitude=${latitude}&longitude=${longitude}&hourly=${hourlyParams}&temperature_unit=${temperatureUnit}&wind_speed_unit=${windSpeedUnit}&timezone=auto&forecast_days=7`;
+        const url = `${config.weatherBaseURL}/forecast?latitude=${latitude}&longitude=${longitude}&hourly=${hourlyParams}&temperature_unit=${temperatureUnit}&wind_speed_unit=${windSpeedUnit}&timezone=auto&forecast_days=14`;
         
         const response = await fetch(url, config.fetchOptions);
 
