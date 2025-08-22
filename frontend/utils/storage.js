@@ -66,7 +66,7 @@ function clearUserData() {
 function saveUserEvents(userId, events) {
     if (!userId) return;
     
-    // Save only locally created events (not mock data events)
+    // Save only locally created events
     const localEvents = events.filter(event => event.isLocal);
     localStorage.setItem(`userEvents_${userId}`, JSON.stringify(localEvents));
 }
@@ -107,7 +107,7 @@ function loadAppSettings() {
     const defaultSettings = {
         theme: 'light',
         language: 'en',
-        defaultLocation: 'Tel Aviv'
+        defaultLocation: 'Kiryat Shmona'
     };
     
     const savedSettings = localStorage.getItem('appSettings');

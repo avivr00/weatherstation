@@ -142,7 +142,7 @@ async function loadUserEventsData() {
 			console.log(`Loaded ${userEvents.length} events from backend`);
 		} else {
 			console.error("Failed to load events:", response.message);
-			// Show error message to user instead of mock data fallback
+			// Show error message to user
 			showEventsLoadError("Unable to load events from server. Please try refreshing the page.");
 			userEvents = [];
 			
@@ -152,7 +152,7 @@ async function loadUserEventsData() {
 		}
 	} catch (error) {
 		console.error("Error loading events:", error);
-		// Show error message to user instead of mock data fallback
+		// Show error message to user
 		showEventsLoadError("Network error while loading events. Please check your connection and try again.");
 		userEvents = [];
 		
@@ -166,7 +166,7 @@ async function loadUserEventsData() {
 function saveUserEventsData() {
 	if (!currentUser) return;
 
-	// Save only locally created events (not mock data events)
+	// Save only locally created events
 	const localEvents = userEvents.filter((event) => event.isLocal);
 	saveEventsToStorage(currentUser.id, localEvents);
 }
@@ -743,7 +743,7 @@ function processForecastData(forecastList) {
 	});
 }
 
-// Mock weather functions removed - now using free Open-Meteo API
+// Weather functionality now using free Open-Meteo API
 
 // Get weather forecast for specific event time
 function getWeatherForEventTime(eventDate, eventTime) {
