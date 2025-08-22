@@ -62,8 +62,32 @@ async function handleLogin(event) {
     }
 }
 
+// Password visibility toggle functionality
+function initializePasswordToggle() {
+    const toggleButton = document.getElementById("togglePassword");
+    const passwordInput = document.getElementById("password");
+    const eyeIcon = document.getElementById("eyeIcon");
+
+    if (toggleButton && passwordInput && eyeIcon) {
+        toggleButton.addEventListener("click", function() {
+            const type = passwordInput.getAttribute("type") === "password" ? "text" : "password";
+            passwordInput.setAttribute("type", type);
+            
+            // Toggle eye icon
+            if (type === "text") {
+                eyeIcon.classList.remove("bi-eye");
+                eyeIcon.classList.add("bi-eye-slash");
+            } else {
+                eyeIcon.classList.remove("bi-eye-slash");
+                eyeIcon.classList.add("bi-eye");
+            }
+        });
+    }
+}
+
 // Initialize the page
 document.addEventListener('DOMContentLoaded', function() {
     checkExistingLogin();
     form.addEventListener("submit", handleLogin);
+    initializePasswordToggle();
 });
