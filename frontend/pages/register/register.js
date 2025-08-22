@@ -1,5 +1,6 @@
 // Authentication using real server API
 import { register } from "../../API/authAPI.js";
+import { saveUserData } from "../../utils/storage.js";
 
 const form = document.getElementById("registerForm");
 const msgEl = document.getElementById("msg");
@@ -53,11 +54,14 @@ async function handleRegistration(event) {
         if (response && response.success === true) {
             showMessage("Registration successful! Redirecting to home page...", "success");
 
+            // Save user data to storage (using localStorage for convenience)
+            saveUserData(response.data, true);
+
             // Clear the form
             form.reset();
 
             // Redirect to home page
-            window.location.href = "../../../home/home.html";
+            window.location.href = "../../home/home.html";
         } else {
             showMessage(response?.message || "Registration failed.", "error");
         }

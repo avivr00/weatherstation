@@ -14,6 +14,7 @@ import {
 	updateEvent,
 	deleteEvent
 } from "../API/eventsAPI.js";
+import { validateToken } from "../API/authAPI.js";
 import {
 	getUserData,
 	isAuthenticated,
@@ -43,7 +44,7 @@ let lastForecastUpdate = null; // Track when forecast was last updated
 
 // Initialize the application
 document.addEventListener("DOMContentLoaded", async function () {
-	checkAuthentication();
+	await checkAuthentication();
 	setupEventListeners();
 	await loadUserEventsData(); // Wait for events to load
 	renderCalendar();
@@ -53,15 +54,25 @@ document.addEventListener("DOMContentLoaded", async function () {
 });
 
 // Authentication check
-function checkAuthentication() {
+async function checkAuthentication() {
 	if (!isAuthenticated()) {
 		window.location.href = "../pages/login/login.html";
 		return;
 	}
 
 	const authData = getUserData();
-	if (authData && authData.user) {
-		currentUser = authData.user;
+	if (authData && authData.token) {
+		// Validate token with server to get user data
+		const validation = await validateToken(authData.token);
+		if (validation.success && validation.data && validation.data.data) {
+			// Extract user data from validation response
+			currentUser = validation.data.data;
+		} else {
+			// Token is invalid, redirect to login
+			clearUserData();
+			window.location.href = "../pages/login/login.html";
+			return;
+		}
 	}
 }
 
