@@ -1,8 +1,10 @@
 // Real authentication API for server communication
 // This will be used when connecting to an actual backend server
 
+import { API_BASE_URL } from '../config/api.js';
+
 const config = {
-    baseURL: "http://localhost:8000", // Change this to your actual server URL
+    baseURL: API_BASE_URL,
     headers: {
         "Content-Type": "application/json"
     }
@@ -90,7 +92,7 @@ const login = async (email, password) => {
             data: {
                 ...data.data,
                 token: data.data.access_token || data.data.token, // Normalize token field
-                user: data.data.user || { email: email } // Add user info if not present
+                user: data.data.user || { 'email': email } // Add user info if not present
             }
         };
     } catch (err) {

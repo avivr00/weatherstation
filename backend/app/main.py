@@ -15,8 +15,9 @@ app = FastAPI()
 # CORS middleware - some origins otherwise not allowed
 app.add_middleware(
     CORSMiddleware,
-    allow_origin_regex="http://127.0.0.1:.*|https://weatherstation-bm81.onrender.com/.*",  # Allow specific origins
-    #allow_credentials=False,  # Must be False when using allow_origins=["*"]
+    allow_origin_regex="http://127.0.0.1:\\.*|https://weatherstation-bm81.onrender.com/\\.*",  # Allow specific origins
+    allow_credentials=False,  # Must be False when using allow_origins=["*"]
+    allow_origins=["*"],  # this is unsafe if hosting on the internet
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=[
         "Accept",

@@ -2,9 +2,10 @@
 // This handles all event-related API calls to the backend server
 
 import { authenticatedFetch, hasValidToken } from '../utils/tokenUtils.js';
+import { API_BASE_URL } from '../config/api.js';
 
 const config = {
-    baseURL: "http://localhost:8000", // FastAPI default port
+    baseURL: API_BASE_URL,
     headers: {
         "Content-Type": "application/json"
     }
