@@ -42,16 +42,20 @@ def validate_access_token(token: str) -> dict:
 
 def validate_user_from_token(token: str, db: Session) -> UserORM | None:
     """Validate a JWT access token and return the associated user if valid."""
-    token_data: dict = validate_access_token(token)
-    email = token_data.get("email") if token_data else None
-    token_version = token_data.get("token_version") if token_data else None
-    user = db.execute(select(UserORM).where(UserORM.email == email)).scalar_one_or_none()
-    if user is None:
+    try:
+        token_data: dict = validate_access_token(token)
+        email = token_data.get("email") if token_data else None
+        token_version = token_data.get("token_version") if token_data else None
+        user = db.execute(select(UserORM).where(UserORM.email == email)).scalar_one_or_none()
+        if user is None:
+            return None
+        # Ensure token_version matches user's current token_version
+        if token_version is None or getattr(user, "token_version", None) != token_version:
+            return None
+        return user
+    except ValueError:
+        # If token validation fails, return None
         return None
-    # Ensure token_version matches user's current token_version
-    if token_version is None or getattr(user, "token_version", None) != token_version:
-        return None
-    return user
 
 
 def extract_bearer_token(authorization: str | None) -> str | None:

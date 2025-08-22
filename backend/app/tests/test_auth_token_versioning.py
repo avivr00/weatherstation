@@ -9,6 +9,7 @@ from app.db.base import Base
 from app.db.session import get_db
 import importlib
 importlib.import_module("app.db.models.users_ORM")
+importlib.import_module("app.db.models.events_ORM")
 
 # Use in-memory SQLite for tests
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
@@ -35,30 +36,31 @@ client = TestClient(app)
 
 def test_token_versioning_flow():
     # Register a new user
-    params = {
+    data = {
         "first_name": "Test",
         "last_name": "User",
         "email": "test.token@example.com",
         "password": "supersecret",
     }
-    r = client.post("/api/auth/register", params=params)
+    r = client.post("/api/auth/register", json=data)
     assert r.status_code == 200
-    data = r.json()
-    assert data["message"] == "User registered successfully"
-    token = data["data"]["access_token"]
+    response_data = r.json()
+    assert response_data["message"] == "User registered successfully"
+    token = response_data["data"]["access_token"]
 
     # Validate token (should be valid)
-    r = client.post("/api/auth/validate", params={"token": token})
+    headers = {"Authorization": f"Bearer {token}"}
+    r = client.post("/api/auth/validate", headers=headers)
     assert r.status_code == 200
     assert r.json()["message"] == "Valid token"
 
     # Logout (this should increment token_version)
-    r = client.post("/api/auth/logout", params={"token": token})
+    r = client.post("/api/auth/logout", headers=headers)
     assert r.status_code == 200
     assert r.json()["message"] == "Logout successful"
 
     # Old token should now be invalid
-    r = client.post("/api/auth/validate", params={"token": token})
+    r = client.post("/api/auth/validate", headers=headers)
     assert r.status_code == 401
 
 
@@ -67,28 +69,66 @@ def test_new_token_after_logout_is_valid_and_old_is_invalid():
     password = "reissuepass"
 
     # Register
-    params = {"first_name": "Re", "last_name": "Issue", "email": email, "password": password}
-    r = client.post("/api/auth/register", params=params)
+    data = {"first_name": "Re", "last_name": "Issue", "email": email, "password": password}
+    r = client.post("/api/auth/register", json=data)
     assert r.status_code == 200
     token1 = r.json()["data"]["access_token"]
 
     # Validate token1 is valid
-    r = client.post("/api/auth/validate", params={"token": token1})
+    headers1 = {"Authorization": f"Bearer {token1}"}
+    r = client.post("/api/auth/validate", headers=headers1)
     assert r.status_code == 200
 
     # Logout using token1 -> increments token_version
-    r = client.post("/api/auth/logout", params={"token": token1})
+    r = client.post("/api/auth/logout", headers=headers1)
     assert r.status_code == 200
 
     # Old token should now be invalid
-    r = client.post("/api/auth/validate", params={"token": token1})
+    r = client.post("/api/auth/validate", headers=headers1)
     assert r.status_code == 401
 
     # Login again to get a fresh token (token2)
-    r = client.post("/api/auth/login", params={"email": email, "password": password})
+    login_data = {"email": email, "password": password}
+    r = client.post("/api/auth/login", json=login_data)
     assert r.status_code == 200
     token2 = r.json()["data"]["access_token"]
 
     # New token should be valid
-    r = client.post("/api/auth/validate", params={"token": token2})
+    headers2 = {"Authorization": f"Bearer {token2}"}
+    r = client.post("/api/auth/validate", headers=headers2)
     assert r.status_code == 200
+
+def test_multiple_logouts_invalidate_all_previous_tokens():
+    email = "multi.logout@example.com"
+    password = "multilogout"
+
+    # Register
+    data = {"first_name": "Multi", "last_name": "Logout", "email": email, "password": password}
+    r = client.post("/api/auth/register", json=data)
+    assert r.status_code == 200
+    token1 = r.json()["data"]["access_token"]
+
+    # Login again to get token2
+    login_data = {"email": email, "password": password}
+    r = client.post("/api/auth/login", json=login_data)
+    assert r.status_code == 200
+    token2 = r.json()["data"]["access_token"]
+
+    # Both tokens should be valid initially
+    headers1 = {"Authorization": f"Bearer {token1}"}
+    headers2 = {"Authorization": f"Bearer {token2}"}
+    
+    r = client.post("/api/auth/validate", headers=headers1)
+    assert r.status_code == 200
+    r = client.post("/api/auth/validate", headers=headers2)
+    assert r.status_code == 200
+
+    # Logout with token2 -> should invalidate token1 as well
+    r = client.post("/api/auth/logout", headers=headers2)
+    assert r.status_code == 200
+
+    # Both tokens should now be invalid
+    r = client.post("/api/auth/validate", headers=headers1)
+    assert r.status_code == 401
+    r = client.post("/api/auth/validate", headers=headers2)
+    assert r.status_code == 401
