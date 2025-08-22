@@ -1,9 +1,10 @@
-# implement the various CRUD actions we need here
+# implement the various CRUD actions we need for managing users
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from app.schemas.response_models import *
 from app.db.models.users_ORM import UserORM
 from app.crud.token_utils import create_access_token, validate_user_from_token
+
 
 def login_api_user(email: str, password: str, db: Session) -> LoginResponseModel:
     """Endpoint to login and return a JWT accesss token in the response"""
@@ -62,7 +63,7 @@ def validate_api_token(token: str, db: Session) -> ValidateResponseModel:
         user = validate_user_from_token(token, db)
         if user is None:
             return ValidateResponseModel(message="Invalid token", error="token failed validation")
-        return ValidateResponseModel(message="Valid token", data={"email": user.email})
+        return ValidateResponseModel(message="Valid token", data={"email": user.email, "first_name": user.first_name, "last_name": user.last_name})
     except Exception:
         return ValidateResponseModel(message="Invalid token", error="Token validation failed")
 

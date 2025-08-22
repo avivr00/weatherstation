@@ -12,6 +12,7 @@ SECRET_KEY = str(config("JWT_SECRET_KEY", default="not very secret"))
 ALGORITHM = str(config("JWT_ALGORITHM", default="HS256"))
 DAYS_LOGGED_IN = int(config("DAYS_LOGGED_IN", default=7))
 
+
 def create_access_token(data: dict, expires_delta: timedelta = timedelta(days=DAYS_LOGGED_IN)):
     """Create a JWT access token with the provided data and expiration."""
     to_encode = data.copy()
@@ -20,6 +21,7 @@ def create_access_token(data: dict, expires_delta: timedelta = timedelta(days=DA
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
+
 
 def validate_access_token(token: str) -> dict:
     """Validate a JWT access token and return the payload if valid."""
@@ -37,6 +39,7 @@ def validate_access_token(token: str) -> dict:
     except Exception as e:
         raise ValueError("Token validation failed")
 
+
 def validate_user_from_token(token: str, db: Session) -> UserORM | None:
     """Validate a JWT access token and return the associated user if valid."""
     token_data: dict = validate_access_token(token)
@@ -49,6 +52,7 @@ def validate_user_from_token(token: str, db: Session) -> UserORM | None:
     if token_version is None or getattr(user, "token_version", None) != token_version:
         return None
     return user
+
 
 def extract_bearer_token(authorization: str | None) -> str | None:
     """Extract the raw token from an Authorization header of form 'Bearer <token>'.

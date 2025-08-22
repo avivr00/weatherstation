@@ -1,8 +1,8 @@
 
 from fastapi import FastAPI, Response
 from starlette.middleware.cors import CORSMiddleware
-from app.api.auth.routes import router as auth_router
-from app.api.events.routes import router as events_router
+from backend.app.api.auth.auth_routes import router as auth_router
+from backend.app.api.events.event_routes import router as events_router
 from app.db.session import engine
 from app.db.base import Base
 from app.db.models import *

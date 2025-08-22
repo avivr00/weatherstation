@@ -8,6 +8,7 @@ from app.crud.token_utils import validate_user_from_token
 from datetime import datetime
 from typing import List, Optional
 
+
 def create_event(title: str, description: Optional[str], date_time: datetime, token: str, db: Session) -> EventResponseModel:
     """Create a new event for the authenticated user"""
     # Validate user from token
@@ -40,6 +41,7 @@ def create_event(title: str, description: Optional[str], date_time: datetime, to
     except Exception as e:
         return EventResponseModel(message="Failed to create event", error=str(e))
 
+
 def get_user_events(token: str, db: Session) -> EventListResponseModel:
     """Get all events for the authenticated user"""
     # Validate user from token
@@ -67,6 +69,7 @@ def get_user_events(token: str, db: Session) -> EventListResponseModel:
         )
     except Exception as e:
         return EventListResponseModel(message="Failed to get events", error=str(e))
+
 
 def get_event_by_id(event_id: int, token: str, db: Session) -> EventResponseModel:
     """Get a specific event by ID (only if user owns it)"""
@@ -99,6 +102,7 @@ def get_event_by_id(event_id: int, token: str, db: Session) -> EventResponseMode
         )
     except Exception as e:
         return EventResponseModel(message="Failed to get event", error=str(e))
+
 
 def update_event(event_id: int, title: Optional[str], description: Optional[str], 
                 date_time: Optional[datetime], token: str, db: Session) -> EventResponseModel:
@@ -143,6 +147,7 @@ def update_event(event_id: int, title: Optional[str], description: Optional[str]
         )
     except Exception as e:
         return EventResponseModel(message="Failed to update event", error=str(e))
+
 
 def delete_event(event_id: int, token: str, db: Session) -> EventResponseModel:
     """Delete an event (only if user owns it)"""
