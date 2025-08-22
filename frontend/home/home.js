@@ -5,10 +5,8 @@ import {
 	getForecastByCoords,
 	getHourlyForecastByCity,
 	getHourlyForecastByCoords,
-	getWeatherIconUrl,
-	isApiKeyConfigured
+	getWeatherIconUrl
 } from "../API/weatherAPI.js";
-import { getMockEvents, saveMockEvents } from "../API/mockData.js";
 import {
 	createEvent,
 	getUserEvents,
@@ -26,7 +24,6 @@ import {
 import {
 	formatDateToString,
 	formatDateToReadable,
-	getMonthNames,
 	getDayNames,
 	isSameDay,
 	isToday,
@@ -38,7 +35,7 @@ let currentDate = new Date();
 let selectedDate = new Date(); // Set to today initially
 let currentUser = null;
 let userEvents = [];
-let currentLocation = "Tel Aviv";
+let currentLocation = "Kiryat Shmona";
 let currentCoordinates = null; // Store coordinates when using current location
 let cachedForecastData = null; // Cache forecast data to avoid repeated API calls
 let cachedHourlyForecastData = null; // Cache hourly forecast data
@@ -109,6 +106,19 @@ function setupEventListeners() {
 	document.getElementById("logoutBtn").addEventListener("click", logoutUser);
 }
 
+// Show error message for events loading failures
+function showEventsLoadError(message) {
+	const eventsSection = document.getElementById("eventsForDay");
+	if (eventsSection) {
+		eventsSection.innerHTML = `
+			<div class="alert alert-warning" role="alert">
+				<i class="bi bi-exclamation-triangle"></i>
+				${message}
+			</div>
+		`;
+	}
+}
+
 // Load user events from backend API
 async function loadUserEventsData() {
 	if (!currentUser) return;
@@ -120,7 +130,7 @@ async function loadUserEventsData() {
 			// Convert backend events to frontend format
 			userEvents = response.data.events.map(event => ({
 				id: event.id,
-				userId: currentUser.id, // For frontend compatibility
+				userId: currentUser.email, // For frontend compatibility
 				title: event.title,
 				description: event.description,
 				date: event.date_time.split('T')[0], // Extract date part (YYYY-MM-DD)
@@ -132,23 +142,23 @@ async function loadUserEventsData() {
 			console.log(`Loaded ${userEvents.length} events from backend`);
 		} else {
 			console.error("Failed to load events:", response.message);
-			// Fallback to mock data if backend fails
-			const allEvents = getMockEvents();
-			userEvents = allEvents.filter((event) => event.userId === currentUser.id);
+			// Show error message to user instead of mock data fallback
+			showEventsLoadError("Unable to load events from server. Please try refreshing the page.");
+			userEvents = [];
 			
-			// Also load any local events created by the user
+			// Load any local events created by the user as fallback
 			const localEvents = loadUserEvents(currentUser.id);
-			userEvents = [...userEvents, ...localEvents];
+			userEvents = [...localEvents];
 		}
 	} catch (error) {
 		console.error("Error loading events:", error);
-		// Fallback to mock data
-		const allEvents = getMockEvents();
-		userEvents = allEvents.filter((event) => event.userId === currentUser.id);
+		// Show error message to user instead of mock data fallback
+		showEventsLoadError("Network error while loading events. Please check your connection and try again.");
+		userEvents = [];
 		
-		// Also load any local events created by the user
+		// Load any local events created by the user as fallback
 		const localEvents = loadUserEvents(currentUser.id);
-		userEvents = [...userEvents, ...localEvents];
+		userEvents = [...localEvents];
 	}
 }
 
@@ -434,12 +444,6 @@ async function saveNewEvent() {
 
 // Weather functions
 async function loadWeatherData() {
-	// Check if weather API is available
-	if (!isApiKeyConfigured()) {
-		showWeatherError('Weather data is loading...<br><small class="text-muted">Using Open-Meteo free weather API</small>');
-		return;
-	}
-
 	// Try to get user's current location first
 	if (navigator.geolocation) {
 		navigator.geolocation.getCurrentPosition(
@@ -459,13 +463,6 @@ async function loadWeatherData() {
 		await getWeatherForLocation(currentLocation);
 	}
 }
-
-// Function to prompt user for API key (not needed for Open-Meteo)
-window.promptForApiKey = function() {
-	// Open-Meteo doesn't require an API key
-	console.log("Open-Meteo doesn't require an API key - automatically loading weather data");
-	loadWeatherData();
-};
 
 async function searchWeatherByCity() {
 	const location = document.getElementById("locationInput").value.trim();

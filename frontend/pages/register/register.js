@@ -1,5 +1,4 @@
-// For production with real server, import from authAPI
-// For testing with mock data, import from mockAuthAPI
+// Authentication using real server API
 import { register } from "../../API/authAPI.js";
 
 const form = document.getElementById("registerForm");
@@ -52,13 +51,13 @@ async function handleRegistration(event) {
         );
         
         if (response && response.success === true) {
-            showMessage("Registration successful! Redirecting to login...", "success");
-            
+            showMessage("Registration successful! Redirecting to home page...", "success");
+
             // Clear the form
             form.reset();
-            
-            // Redirect to login page
-            window.location.href = "../login/login.html";
+
+            // Redirect to home page
+            window.location.href = "../../../home/home.html";
         } else {
             showMessage(response?.message || "Registration failed.", "error");
         }

@@ -437,17 +437,6 @@ function getWeatherIconUrl(iconCode, size = '') {
 }
 
 /**
- * Check if API is available (always true for Open-Meteo)
- * @returns {boolean} Always true - no API key required
- */
-function isApiKeyConfigured() {
-    return true; // Open-Meteo doesn't require an API key
-}
-
-/**
- * No-op functions for API key management (Open-Meteo doesn't need them)
- */
-/**
  * Get hourly weather forecast by coordinates (up to 7 days)
  * @param {number} latitude - Latitude
  * @param {number} longitude - Longitude
@@ -601,14 +590,6 @@ const getHourlyForecastByCity = async (city, temperatureUnit = "celsius", windSp
     }
 };
 
-function setApiKey(apiKey) {
-    console.log("Open-Meteo doesn't require an API key");
-}
-
-function storeApiKey(apiKey) {
-    console.log("Open-Meteo doesn't require an API key");
-}
-
 export { 
     getCurrentWeatherByCity, 
     getCurrentWeatherByCoords, 
@@ -616,9 +597,5 @@ export {
     getForecastByCoords,
     getHourlyForecastByCity,
     getHourlyForecastByCoords,
-    getWeatherIconUrl,
-    setApiKey,
-    storeApiKey,
-    isApiKeyConfigured,
-    searchLocations
+    getWeatherIconUrl
 };

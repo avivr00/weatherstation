@@ -1,5 +1,4 @@
-// For production with real server, import from authAPI
-// For testing with mock data, import from mockAuthAPI
+// Authentication using real server API
 import { login } from "../../API/authAPI.js";
 import { saveUserData, isAuthenticated } from "../../utils/storage.js";
 
