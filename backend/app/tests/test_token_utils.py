@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 from unittest.mock import patch
 import jwt
 
-from backend.app.utils.token_utils import (
+from app.utils.token_utils import (
     create_access_token,
     validate_access_token,
     validate_user_from_token,
@@ -386,6 +386,6 @@ class TestTokenIntegration:
         token = create_access_token(data)
         
         # Now try to validate it with a different secret by patching
-        with patch('app.crud.token_utils.SECRET_KEY', 'different_secret'):
+        with patch('app.utils.token_utils.SECRET_KEY', 'different_secret'):
             with pytest.raises(ValueError, match="Invalid token"):
                 validate_access_token(token)

@@ -5,7 +5,7 @@ from typing import List
 from app.schemas.response_models import RegisterResponseModel, LoginResponseModel, LogoutResponseModel, ValidateResponseModel, RegisterRequest, LoginRequest
 from app.db.session import get_db
 from app.crud.users_crud import register_api_user, login_api_user, logout_api_user, validate_api_token
-from backend.app.utils.token_utils import extract_bearer_token
+from app.utils.token_utils import extract_bearer_token
 
 router = APIRouter()
 

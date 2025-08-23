@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from app.schemas.response_models import EventResponseModel, EventListResponseModel, EventRequest, EventUpdateRequest
 from app.db.session import get_db
 from app.crud.events_crud import create_event, get_user_events, get_event_by_id, update_event, delete_event
-from backend.app.utils.token_utils import extract_bearer_token
+from app.utils.token_utils import extract_bearer_token
 
 
 router = APIRouter()

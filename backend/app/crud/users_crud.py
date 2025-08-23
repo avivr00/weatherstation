@@ -3,8 +3,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 from app.schemas.response_models import *
 from app.db.models.users_ORM import UserORM
-from backend.app.utils.token_utils import create_access_token, validate_user_from_token
-from backend.app.utils.password_utils import hash_password, verify_password
+from app.utils.token_utils import create_access_token, validate_user_from_token
+from app.utils.password_utils import hash_password, verify_password
 
 
 def login_api_user(email: str, password: str, db: Session) -> LoginResponseModel:

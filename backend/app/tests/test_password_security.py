@@ -6,7 +6,7 @@ ensuring that passwords are stored securely and can be properly validated.
 """
 
 import pytest
-from backend.app.utils.password_utils import hash_password, verify_password
+from app.utils.password_utils import hash_password, verify_password
 
 
 class TestPasswordHashing:
