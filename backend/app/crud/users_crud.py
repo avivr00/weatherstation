@@ -3,7 +3,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 from app.schemas.response_models import *
 from app.db.models.users_ORM import UserORM
-from app.crud.token_utils import create_access_token, validate_user_from_token
+from backend.app.utils.token_utils import create_access_token, validate_user_from_token
+from backend.app.utils.password_utils import hash_password, verify_password
 
 
 def login_api_user(email: str, password: str, db: Session) -> LoginResponseModel:
@@ -11,8 +12,13 @@ def login_api_user(email: str, password: str, db: Session) -> LoginResponseModel
     assert(password is not None and email is not None)
     
     user = db.execute(select(UserORM).where(UserORM.email == email)).scalar_one_or_none()
-    if user is None or getattr(user, "password", None) != password:
+    if user is None:
         return LoginResponseModel(message="Invalid email or password", data=None, error="Invalid credentials")
+    
+    # Use secure password verification instead of direct comparison
+    if not verify_password(password, getattr(user, "password")):
+        return LoginResponseModel(message="Invalid email or password", data=None, error="Invalid credentials")
+    
     # include token_version to support token revocation/versioning
     access_token = create_access_token(data={'email': user.email, 'token_version': getattr(user, 'token_version', 0)})
     return LoginResponseModel(message="Login successful", data={"access_token": access_token, "token_type": "bearer"}, error=None)
@@ -40,12 +46,16 @@ def register_api_user(first_name: str, last_name: str, email: str, password: str
     user = db.execute(select(UserORM).where(UserORM.email == email)).scalar_one_or_none()
     if user:
         return RegisterResponseModel(message="User already exists", error="Email already registered")
-    # Create new user
+    
+    # Hash the password before storing it in the database
+    hashed_password = hash_password(password)
+    
+    # Create new user with hashed password
     new_user = UserORM(
         email=email,
         first_name=first_name,
         last_name=last_name,
-        password=password
+        password=hashed_password  # Store the hash, not the plain text!
     )
     db.add(new_user)
     db.commit()

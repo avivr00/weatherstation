@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 from unittest.mock import patch
 import jwt
 
-from app.crud.token_utils import (
+from backend.app.utils.token_utils import (
     create_access_token,
     validate_access_token,
     validate_user_from_token,

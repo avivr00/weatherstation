@@ -10,7 +10,7 @@ from decouple import config
 
 SECRET_KEY = str(config("JWT_SECRET_KEY", default="not very secret"))
 ALGORITHM = str(config("JWT_ALGORITHM", default="HS256"))
-DAYS_LOGGED_IN = int(config("DAYS_LOGGED_IN", default=7))
+DAYS_LOGGED_IN = float(config("DAYS_LOGGED_IN", default=1))
 
 
 def create_access_token(data: dict, expires_delta: timedelta = timedelta(days=DAYS_LOGGED_IN)):

@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.schemas.response_models import *
 from app.db.models.events_ORM import EventORM
 from app.db.models.users_ORM import UserORM
-from app.crud.token_utils import validate_user_from_token
+from backend.app.utils.token_utils import validate_user_from_token
 from datetime import datetime
 from typing import List, Optional
 

@@ -9,7 +9,7 @@ class UserORM(Base):
     email = Column(String, unique=True, primary_key=True, index=True, nullable=False)
     first_name = Column(String, nullable=True)
     last_name = Column(String, nullable=True)
-    password = Column(String, nullable=False) # passwords are stored without hashing! This is bad, but anyway...
+    password = Column(String, nullable=False)  # Stores bcrypt hashed passwords (secure)
     
     # Increment this to invalidate previously issued tokens for the user
     token_version = Column(Integer, default=0, nullable=False)
